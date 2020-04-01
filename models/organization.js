@@ -7,7 +7,7 @@ const organizationSchema = new MONGOOSE.Schema({
         required: [true, 'organization name required']
     },
     address: {
-        type: [String],
+        type: String,
         required: [true, 'organization address required']
     },
     city: {
