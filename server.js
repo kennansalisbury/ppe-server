@@ -24,9 +24,9 @@ APP.use('/auth', EXPRESS_JWT({
     ]
 }), require('./controllers/auth'));
 // // protected routes
-// APP.use('/volunteers', EXPRESS_JWT({
-//     secret: process.env.JWT_SECRET
-// }), require('./controllers/producers'))
+APP.use('/volunteers', EXPRESS_JWT({
+    secret: process.env.JWT_SECRET
+}), require('./controllers/volunteers'))
 // APP.use('/clinics', EXPRESS_JWT({
 //     secret: process.env.JWT_SECRET
 // }), require('./controllers/clinics'))
