@@ -173,7 +173,7 @@ const userSchema = new MONGOOSE.Schema({
     other: String,
     orders: {
         type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'ProductOrder'
+        ref: 'Order'
     }  
 });
 // hash password with bcrypt

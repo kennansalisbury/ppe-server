@@ -27,9 +27,13 @@ APP.use('/auth', EXPRESS_JWT({
 APP.use('/volunteers', EXPRESS_JWT({
     secret: process.env.JWT_SECRET
 }), require('./controllers/volunteers'))
-// APP.use('/clinics', EXPRESS_JWT({
-//     secret: process.env.JWT_SECRET
-// }), require('./controllers/clinics'))
+APP.use('/customers', EXPRESS_JWT({
+    secret: process.env.JWT_SECRET
+}).unless({
+    path: [
+        { url: '/customers/demand', methods: ['GET']}
+    ]
+}), require('./controllers/customers'))
 // APP.use('/orders', EXPRESS_JWT({
 //     secret: process.env.JWT_SECRET
 // }), require('./controllers/orders'))
