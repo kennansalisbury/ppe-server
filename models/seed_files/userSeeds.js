@@ -52,18 +52,6 @@ let teamLeadData = teamLeadFirstNames.map((name, index) => ({
 }))
 
 
-let customerData = customerFirstNames.map((name, index) => ({
-    firstName: name,
-    lastName: `${name}ington`,
-    username: `${name.toLowerCase()}123`,
-    password: `password${name.toLowerCase()}123`,
-    email: `${name}123@gmail.com`,
-    phone: `1234567890`,
-    customer: {
-        orgAffiliation: 'org admin'
-    }
-}))
-
 let adminData = adminFirstNames.map((name, index) => ({
     firstName: name,
     lastName: `${name}ington`,
@@ -84,9 +72,28 @@ let steeringTeamData = steeringTeamFirstNames.map((name, index) => ({
     viewAllPermissions: true
 }))
 
-DB.User.create(makerData).then(console.log('makers seeded'))
-DB.User.create(driverData).then(console.log('drivers seeded'))
-DB.User.create(customerData).then(console.log('customers seeded'))
-DB.User.create(teamLeadData).then(console.log('teamLeads seeded'))
-DB.User.create(adminData).then(console.log('admins seeded'))
-DB.User.create(steeringTeamData).then(console.log('steeringTeams seeded'))
+// DB.User.create(makerData).then(console.log('makers seeded'))
+// DB.User.create(driverData).then(console.log('drivers seeded'))
+// DB.User.create(teamLeadData).then(console.log('teamLeads seeded'))
+// DB.User.create(adminData).then(console.log('admins seeded'))
+// DB.User.create(steeringTeamData).then(console.log('steeringTeams seeded'))
+
+DB.Organization.find().then(organizations => {
+    let organizationIds = organizations.map(org => org._id)
+
+    let customerData = customerFirstNames.map((name, index) => ({
+        firstName: name,
+        lastName: `${name}ington`,
+        username: `${name.toLowerCase()}123`,
+        password: `password${name.toLowerCase()}123`,
+        email: `${name}123@gmail.com`,
+        phone: `1234567890`,
+        customer: {
+            orgAffiliation: 'org admin',
+            organization: `${organizationIds[Math.floor(Math.random() * organizationIds.length)]}`
+        }
+    }))
+
+    DB.User.create(customerData).then(console.log('customers seeded'))
+
+})

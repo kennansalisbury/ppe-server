@@ -31,23 +31,23 @@ let organizations = [{
 let zipcodes = ['981037768', '981013097', '981083844']
 
 
-DB.User.find({customer: {$exists: true}})
-.then(users => {
+// DB.User.find({customer: {$exists: true}})
+// .then(users => {
 
-    let userIds = users.map(user => user._id)
+    // let userIds = users.map(user => user._id)
 
-    let data = organizations.map((clinic, index) => ({
-        name: clinic.name,
-        address: clinic.address,
-        city: clinic.city,
-        state: 'WA',
-        zipcode: zipcodes[(Math.floor(Math.random() * zipcodes.length))],
-        numberOfEmployees: Math.floor(Math.random() * 100),
-        customer: `${userIds[Math.floor(Math.random() * userIds.length)]}`,
-        laundryCapable: true
-    }))
+let data = organizations.map((clinic, index) => ({
+    name: clinic.name,
+    address: clinic.address,
+    city: clinic.city,
+    state: 'WA',
+    zipcode: zipcodes[(Math.floor(Math.random() * zipcodes.length))],
+    numberOfEmployees: Math.floor(Math.random() * 100),
+    // customer: `${userIds[Math.floor(Math.random() * userIds.length)]}`,
+    laundryCapable: true
+}))
 
 DB.Organization.create(data).then(console.log('organizations seeded'))
 // console.log(data)
 
-})
+// })

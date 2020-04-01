@@ -14,14 +14,15 @@ APP.use(MORGAN('dev'));
 APP.use(EXPRESS.urlencoded({ extended: false }));
 APP.use(EXPRESS.json());
 // auth routes
-// APP.use('/auth', EXPRESS_JWT({
-//     secret: process.env.JWT_SECRET
-// }).unless({
-//     path: [
-//         { url: '/auth/login', methods: ['POST']},
-//         { url: '/auth/signup', methods: ['POST']}
-//     ]
-// }), require('./controllers/auth'));
+APP.use('/auth', EXPRESS_JWT({
+    secret: process.env.JWT_SECRET
+}).unless({
+    path: [
+        { url: '/auth/login', methods: ['POST']},
+        { url: '/auth/signup/volunteer', methods: ['POST']},
+        { url: '/auth/signup/order', methods: ['POST']}
+    ]
+}), require('./controllers/auth'));
 // // protected routes
 // APP.use('/producers', EXPRESS_JWT({
 //     secret: process.env.JWT_SECRET

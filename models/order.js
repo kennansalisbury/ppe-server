@@ -50,20 +50,25 @@ const orderSchema = new MONGOOSE.Schema({
     },
     collected: {
         type: Boolean,
-        required: [true, 'collection status required']
+        required: [true, 'collection status required'],
+        default: false
     },
     delivered: {
         type: Boolean,
-        required: [true, 'delivery status required']
+        required: [true, 'delivery status required'],
+        default: false
     },
     orgReceived: {
         type: Boolean,
-        required: [true, 'collection status required']
+        required: [true, 'collection status required'],
+        default: false
     },
     withdrawRQ: {
         type: Boolean,
-        required: [true, 'delivery status required']
-    }
+        required: [true, 'delivery status required'],
+        default: false
+    },
+    timestamps: Date
 });
 
 module.exports = MONGOOSE.model('Order', orderSchema);

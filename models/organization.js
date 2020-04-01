@@ -25,10 +25,6 @@ const organizationSchema = new MONGOOSE.Schema({
     numberOfEmployees: {
         type: Number,
         required: [true, 'number of employees required']
-    },
-    customer: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'User'
     },  
     laundryCapable: Boolean
 });
