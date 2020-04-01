@@ -3,8 +3,7 @@ const ROUTER = require('express').Router();
 
 // GET /volunteers - find all volunteers and provide info depending on which type of user the rq is coming from
 ROUTER.get('/', (req, res) => {
-    console.log(req.user)
-
+    
      //if rq coming from source other than admin, team lead, or steering team - forbidden
     if(!req.user.adminPermissions && !req.user.teamLead && !req.user.viewAllPermissions) {
         res.status(403).send({message: 'Forbidden'})
@@ -104,5 +103,89 @@ ROUTER.get('/:id', (req, res) => {
     }
 
 })
+
+//PUT /volunteers/:id - update volunteer details
+ROUTER.put('/:id', (req, res) => {
+
+    //if it is a customer or steering team member, can't use this route
+    if(req.user.customer || req.user.viewAllPermissions) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+    //for anyone else, if the id matches their own they can make any updates
+    if(req.params.id === req.user._id) {
+        DB.User.findByIdAndUpdate(req.params.id, req.body, {new: true})
+        .then(updated => {
+            res.send(updated)
+        })
+        .catch(err => {
+            console.log('Error updating user', err)
+            res.status(503).send('Internal server error')
+        })
+    }
+    //if admin or team lead, can update team lead rosters and assign/unassign team leads to volunteers
+    else if(req.user.adminPermissions || req.user.teamLead) {
+       
+        DB.User.findById(req.params.id)
+        .then(user => {
+            let update
+            //if maker, update team lead in maker
+            if(user.maker){
+                update = {
+                    maker: {
+                        teamLead: req.body.teamLead
+                    }
+                }
+            }
+            //if driver, update team lead in driver
+            else if(user.driver){
+                update = {
+                    driver: {
+                        teamLead: req.body.teamLead
+                    }
+                }
+            }
+            else {
+                res.status(403).send({message: 'Forbidden'})
+                return
+            }
+
+            let updateConfirmations = []
+            DB.User.findByIdAndUpdate(req.params.id, update, {new: true})
+            .then(updated => {
+                updateConfirmations.push({updatedVolunteer: updated}) //front end will confirm if updated w/ response.nModified === 1
+                //then update team leader volunteer roster with user._id
+                DB.User.findByIdAndUpdate(req.body.teamLead, {
+                    teamLead: {
+                        volunteerRoster: user._id
+                    }
+                }, {new: true})
+                .then(updated => {
+                    updateConfirmations.push({updatedRoster: updated})
+                    res.send(updateConfirmations)
+                })
+                .catch(err => {
+                    console.log('Error updating team lead', err)
+                    res.status(503).send('Internal server error')
+                })
+            })
+            .catch(err => {
+                console.log('Error updating volunteer', err)
+                res.status(503).send('Internal server error')
+            })
+       })
+        .catch(err => {
+        console.log('Error finding volunteer', err)
+        res.status(503).send('Internal server error')
+        })
+    
+    }
+    else {
+        res.status(403).send({message: 'Forbidden'})
+    }
+})
+
+
 
 module.exports = ROUTER;
