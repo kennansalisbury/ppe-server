@@ -23,7 +23,11 @@ APP.use('/auth', EXPRESS_JWT({
         { url: '/auth/signup/order', methods: ['POST']}
     ]
 }), require('./controllers/auth'));
-// // protected routes
+
+// protected routes
+APP.use('/profile', EXPRESS_JWT({
+    secret: process.env.JWT_SECRET
+}), require('./controllers/profile'))
 APP.use('/volunteers', EXPRESS_JWT({
     secret: process.env.JWT_SECRET
 }), require('./controllers/volunteers'))

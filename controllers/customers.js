@@ -44,11 +44,39 @@ ROUTER.get('/demand', (req, res) => {
 })
 
 //GET /customers/:id - show 1 customer info (customer should be only one to need this route)
+ROUTER.get('/:id', (req, res) => {
+    if(!req.user.customer){
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+    DB.User.findById(req.params.id)
+    .then(user => {
+        res.send(user)
+    })
+    .catch(err => {
+        console.log('Error finding customer', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
 
 
+//PUT /customers/:id - update 1 customer info (customer should be only one to need this route)
+ROUTER.put('/:id', (req, res) => {
+    if(!req.user.customer){
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
 
-//GET /customers/:id - update 1 customer info (customer should be only one to need this route)
-
+    DB.User.findByIdAndUpdate(req.params.id, req.body, {new: true})
+    .then(updatedUser => {
+        res.send(updatedUser)
+    })
+    .catch(err => {
+        console.log('Error updating customer', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
 
 
 
