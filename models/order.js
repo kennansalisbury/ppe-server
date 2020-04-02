@@ -69,7 +69,12 @@ const orderSchema = new MONGOOSE.Schema({
     },
     withdrawRQ: {
         type: Boolean,
-        required: [true, 'delivery status required'],
+        required: true,
+        default: false
+    },
+    cancelled: {
+        type: Boolean,
+        required: true,
         default: false
     },
     timestamps: Date

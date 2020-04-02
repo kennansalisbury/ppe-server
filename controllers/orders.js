@@ -140,8 +140,92 @@ ROUTER.get('/', (req, res) => {
 
 })
 
-//PUT /orders - edit order details
+//PUT /:id - edit order details
+ROUTER.put('/:id', (req, res) => {
 
+    //if admin, can make updates to any order details
+    if(req.user.adminPermissions) {
+        DB.Order.findByIdAndUpdate(req.params.id, req.body, {new: true})
+        .then(updatedOrder => {
+            res.send(updatedOrder)
+        })
+        .catch(err => {
+            console.log('Error finding orders', err)
+            res.status(503).send({message: 'Internal server error'})
+        })
+    }
+
+    //if team lead can make updates to assigned driver, production details/makers etc., qty to be fulfilled, and order status items
+    if(req.user.teamLead){
+        DB.Order.findByIdAndUpdate(
+            req.params.id, 
+            {
+                driver: req.body.driver, 
+                productionDetails: req.body.productionDetails, 
+                "productOrderDetails.toBeFulfilledQty": req.body.toBeFulfilledQty,
+                collected: req.body.collected,
+                delivered: req.body.delivered,
+                readyForDelivery: req.body.readyForDelivery
+            }, 
+            {new: true}
+        )
+        .then(updatedOrder => {
+            res.send(updatedOrder)
+        })
+        .catch(err => {
+            console.log('Error finding orders', err)
+            res.status(503).send({message: 'Internal server error'})
+        })
+    }
+
+    // if driver can make updates to order status - collected/delivered
+    if(req.user.driver) {
+        DB.Order.findByIdAndUpdate(
+            req.params.id, 
+            {
+                collected: req.body.collected,
+                delivered: req.body.delivered,
+            }, 
+            {new: true}
+        )
+        .then(updatedOrder => {
+            res.send(updatedOrder)
+        })
+        .catch(err => {
+            console.log('Error finding orders', err)
+            res.status(503).send({message: 'Internal server error'})
+        })
+    }
+    // if customer can make updates to: 
+        //status updates - org received, withdrawRQ,
+        // qty requested (if inventory not collected yet)
+
+    if(req.user.customer) {
+        DB.Order.findByIdAndUpdate(
+            req.params.id, 
+            {
+                productOrderDetails: {
+                    orgRequestQty: req.body.orgRequestQty
+                },
+                withdrawRQ: req.body.withdrawRQ,
+                orgReceived: req.body.orgReceived
+            }, 
+            {new: true}
+        )
+        .then(updatedOrder => {
+            res.send(updatedOrder)
+        })
+        .catch(err => {
+            console.log('Error finding orders', err)
+            res.status(503).send({message: 'Internal server error'})
+        })
+
+    }
+
+    if(!req.user.customer && !req.user.driver && !req.user.teamLead && !req.user.adminPermissions) {
+        res.status(403).send({message: 'Forbidden'})
+    }
+})
 
 
 
