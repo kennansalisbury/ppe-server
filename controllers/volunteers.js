@@ -56,6 +56,9 @@ ROUTER.get('/:id', (req, res) => {
     
     if(req.user.teamLead || req.user.maker || req.user.driver) {
         DB.User.findById(req.params.id)
+        .populate('driver.teamLead')
+        .populate('maker.teamLead')
+        .populate('teamLead.volunteerRoster')
         .then(volunteer => {
             if(req.params.id === req.user._id) {
                 res.send(volunteer)
@@ -63,10 +66,10 @@ ROUTER.get('/:id', (req, res) => {
             else if(req.user.teamLead) {
 
                 //if team lead requesting, can view volunteer if on team roster or unassigned
-                if(volunteer.maker && (!volunteer.maker.teamLead || volunteer.maker.teamLead.toString() === req.user._id)) {
+                if(volunteer.maker && (!volunteer.maker.teamLead || volunteer.maker.teamLead._id === req.user._id)) {
                     res.send(volunteer)  
                 }
-                else if(volunteer.driver && (!volunteer.driver.teamLead || volunteer.driver.teamLead.toString() === req.user._id)) {
+                else if(volunteer.driver && (!volunteer.driver.teamLead || volunteer.driver.teamLead._id === req.user._id)) {
                     res.send(volunteer)
                 }
                 else {
@@ -113,19 +116,8 @@ ROUTER.put('/:id', (req, res) => {
         return
     }
 
-    //for anyone else, if the id matches their own they can make any updates
-    if(req.params.id === req.user._id) {
-        DB.User.findByIdAndUpdate(req.params.id, req.body, {new: true})
-        .then(updated => {
-            res.send(updated)
-        })
-        .catch(err => {
-            console.log('Error updating user', err)
-            res.status(503).send('Internal server error')
-        })
-    }
     //if admin or team lead, can update team lead rosters and assign/unassign team leads to volunteers
-    else if(req.user.adminPermissions || req.user.teamLead) {
+    if(req.user.adminPermissions || req.user.teamLead) {
        
         DB.User.findById(req.params.id)
         .then(user => {
