@@ -51,6 +51,7 @@ ROUTER.get('/:id', (req, res) => {
     }
 
     DB.User.findById(req.params.id)
+    .populate('orders')
     .then(user => {
         res.send(user)
     })
