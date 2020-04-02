@@ -15,5 +15,16 @@
   "bugs": {
     "url": "https://github.com/GavinCallander/sewstrong-server/issues"
   },
-  "homepage": "https://github.com/GavinCallander/sewstrong-server#readme"
+  "homepage": "https://github.com/GavinCallander/sewstrong-server#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-jwt": "^5.3.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.9.7",
+    "morgan": "^1.10.0",
+    "rowdy-logger": "^1.0.2"
+  }
 }
