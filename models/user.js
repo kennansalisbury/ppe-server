@@ -171,10 +171,10 @@ const userSchema = new MONGOOSE.Schema({
         default: false
     },
     other: String,
-    orders: {
+    orders: [{
         type: MONGOOSE.Schema.Types.ObjectId,
         ref: 'Order'
-    }  
+    } ] 
 });
 // hash password with bcrypt
 userSchema.pre('save', function(next) {

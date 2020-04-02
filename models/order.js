@@ -44,6 +44,10 @@ const orderSchema = new MONGOOSE.Schema({
         type: MONGOOSE.Schema.Types.ObjectId,
         ref: 'User'
     },
+    organization: {
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'Organization'
+    },
     readyForDelivery: {
         type: Boolean,
         default: false

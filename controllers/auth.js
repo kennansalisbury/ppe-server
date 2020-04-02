@@ -129,7 +129,8 @@ ROUTER.post('/signup/order', (req, res) => {
                         DB.Order.create({
                             orderNumber: req.body.order.orderNumber,
                             productOrderDetails: req.body.order.productOrderDetails,
-                            customer: newUser._id
+                            customer: newUser._id,
+                            organization: newOrganization._id
                         })
                         .then(newOrder => {
                             data.push(newOrder)
