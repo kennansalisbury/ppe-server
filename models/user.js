@@ -63,9 +63,9 @@ const makerSchema = new MONGOOSE.Schema({
     },
     zipcode: {
         type: String,
-        required: [true, 'zipcode is required'],
-        minlength: [9, '9-digit zipcode required'],
-        maxlength: [9, '9-digit zipcode required']
+        required: [true, 'zipcode is required']
+        // minlength: [9, '9-digit zipcode required'],
+        // maxlength: [9, '9-digit zipcode required']
     },
     makerProduction: [makerProductionSchema],
     makerPledge: [makerPledgeSchema],
@@ -82,9 +82,9 @@ const makerSchema = new MONGOOSE.Schema({
 const driverSchema = new MONGOOSE.Schema({
     zipcode: {
         type: String,
-        required: [true, 'zipcode is required'],
-        minlength: [9, '9-digit zipcode required'],
-        maxlength: [9, '9-digit zipcode required']
+        required: [true, 'zipcode is required']
+        // minlength: [9, '9-digit zipcode required'],
+        // maxlength: [9, '9-digit zipcode required']
     },
     teamLead: {
         type: MONGOOSE.Schema.Types.ObjectId,
@@ -108,9 +108,9 @@ const teamLeadSchema = new MONGOOSE.Schema({
     },
     zipcode: {
         type: String,
-        required: [true, 'zipcode is required'],
-        minlength: [9, '9-digit zipcode required'],
-        maxlength: [9, '9-digit zipcode required']
+        required: [true, 'zipcode is required']
+        // minlength: [9, '9-digit zipcode required'],
+        // maxlength: [9, '9-digit zipcode required']
     },
     volunteerRoster: [{
         type: MONGOOSE.Schema.Types.ObjectId,
@@ -135,10 +135,7 @@ const userSchema = new MONGOOSE.Schema({
         type: String,
         required: [true, 'first name required']
     },
-    lastName: {
-        type: String,
-        required: [true, 'last name required']
-    },
+    lastName: String,
     username: {
         type: String,
         required: [true, 'username required']

@@ -128,7 +128,7 @@ ROUTER.post('/signup/order', (req, res) => {
                     let newOrders = []
                     ASYNC.forEach(req.body.productOrderDetails, (productOrder, done) => {
                         DB.Order.create({
-                            orderNumber: req.body.order.orderNumber,
+                            orderNumber: Math.floor(Math.random() * 100000000),
                             productOrderDetails: productOrder,
                             customer: newUser._id,
                             organization: newOrganization._id
@@ -153,8 +153,7 @@ ROUTER.post('/signup/order', (req, res) => {
                             let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
                                 expiresIn: 120
                             });
-                            data.push({ token });
-                            res.send(data)
+                            res.send({ token })
                         })
                         .catch(err => {
                             console.log('Error updating user', err)
