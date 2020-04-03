@@ -44,6 +44,10 @@ const orderSchema = new MONGOOSE.Schema({
         type: MONGOOSE.Schema.Types.ObjectId,
         ref: 'User'
     },
+    organization: {
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'Organization'
+    },
     readyForDelivery: {
         type: Boolean,
         default: false
@@ -65,7 +69,12 @@ const orderSchema = new MONGOOSE.Schema({
     },
     withdrawRQ: {
         type: Boolean,
-        required: [true, 'delivery status required'],
+        required: true,
+        default: false
+    },
+    cancelled: {
+        type: Boolean,
+        required: true,
         default: false
     },
     timestamps: Date

@@ -3,6 +3,8 @@ require('dotenv').config();
 const JWT = require('jsonwebtoken');
 const DB = require('../models');
 const ROUTER = require('express').Router();
+const ASYNC = require('async')
+
 // POST /auth/login
 ROUTER.post('/login', (req, res) => {
     console.log(req.body.email)
@@ -82,97 +84,96 @@ ROUTER.post('/signup/order', (req, res) => {
     //IF USER & ORG ARE NEW, create new organization THEN create user THEN create order
 
     let data = []
-    //check user
-    DB.User.findOne({ email: req.body.user.email })
+    //check user email and username for existing in database
+    DB.User.findOne({ $or: [{email: req.body.user.email }, {username: req.body.user.username}]})
     .then(user => {
         // if user exists, error
         if (user) {
-            return res.status(409).send({ message: 'Email already in use'});
+            return res.status(409).send({ message: 'Email or username already in use'});
         };
-        // if not, check for username
-        DB.User.findOne({username: req.body.user.username})
-        .then(username => {
-            //if username exists, error
-            if(username) {
-                return res.status(409).send({ message: 'Username already in use'});
+        // if not, check for organization with same name/zipcode or same address/zipcode
+        DB.Organization.findOne({
+            $or: [
+                {name: req.body.organization.name, zipcode: req.body.organization.zipcode},
+                {address: req.body.organization.address, zipcode: req.body.organization.zipcode}
+            ]
+        })
+        .then(organization => {
+            //if org exists, error
+            if(organization) {
+                return res.status(409).send({message: 'Organization with the same name and zipcode, or same address already exists'})
             }
-            //if not, check for organization
-            DB.Organization.findOne({name: req.body.organization.name, zipcode: req.body.organization.zipcode})
-            .then(organization => {
-                //if org exists, error
-                if(organization) {
-                    return res.status(409).send({message: 'Organization with the same name and zipcode already exists'})
-                }
-                
-                //else, create new org
-                DB.Organization.create(req.body.organization)
-                .then(newOrganization => {
-                    data.push(newOrganization)
-                    console.log('new organization created', newOrganization)
+            
+            //else, create new org
+            DB.Organization.create(req.body.organization)
+            .then(newOrganization => {
+                data.push(newOrganization)
+                console.log('new organization created', newOrganization)
 
-                    //create new user
-                    DB.User.create({
-                        firstName: req.body.user.firstName,
-                        lastName: req.body.user.lastName,
-                        username: req.body.user.username,
-                        password: req.body.user.password,
-                        email: req.body.user.email,
-                        phone: req.body.user.phone,
-                        customer: {
-                            orgAffiliation: req.body.user.customer.orgAffiliation,
-                            organization: newOrganization._id
-                        }
-                    })
-                    .then(newUser => {
-                        console.log('new user created', newUser)
-                        //create new order
+                //create new user
+                DB.User.create({
+                    firstName: req.body.user.firstName,
+                    lastName: req.body.user.lastName,
+                    username: req.body.user.username,
+                    password: req.body.user.password,
+                    email: req.body.user.email,
+                    phone: req.body.user.phone,
+                    customer: {
+                        orgAffiliation: req.body.user.customer.orgAffiliation,
+                        organization: newOrganization._id
+                    }
+                })
+                .then(newUser => {
+                    console.log('new user created', newUser)
+                    let newOrders = []
+                    ASYNC.forEach(req.body.productOrderDetails, (productOrder, done) => {
                         DB.Order.create({
-                            orderNumber: req.body.order.orderNumber,
-                            productOrderDetails: req.body.order.productOrderDetails,
-                            customer: newUser._id
+                            orderNumber: Math.floor(Math.random() * 100000000),
+                            productOrderDetails: productOrder,
+                            customer: newUser._id,
+                            organization: newOrganization._id
                         })
                         .then(newOrder => {
-                            data.push(newOrder)
                             console.log('new order created', newOrder)
-                            //add order id to user
-                            DB.User.findByIdAndUpdate(newUser._id, {orders: newOrder._id}, {new: true})
-                            .then(updatedUser => {
-                                console.log('user updated', updatedUser)
-                                  // sign token to user
-                                    let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
-                                        expiresIn: 120
-                                    });
-                                    data.push({ token });
-                                    res.send(data)
-                            })
-                            .catch(err => {
-                                console.log('Error updating user', err)
-                                res.status(503).send('Internal server error')
-                            })
+                            newOrders.push(newOrder)
+                            done()
+                        })
+                        .catch(done)
+                        }, 
+                        //once all orders created, add them to the data, and add the ids to the user
+                        () => {
+                        data.push(newOrders)
+                        let orderIds = newOrders.map(order => order._id)
+                        
+                        //add order ids to user
+                        DB.User.findByIdAndUpdate(newUser._id, {orders: orderIds}, {new: true})
+                        .then(updatedUser => {
+                            console.log('user updated', updatedUser)
+                            // sign token to user
+                            let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+                                expiresIn: 120
+                            });
+                            res.send({ token })
                         })
                         .catch(err => {
-                            console.log('Error creating new order', err)
+                            console.log('Error updating user', err)
                             res.status(503).send('Internal server error')
                         })
-                    })
-                    .catch(err => {
-                        console.log(`Error creating new user. ${err}`);
-                        res.status(500).send({ message: 'Internal server error.'})
-                    });  
+                    })     
                 })
                 .catch(err => {
-                    console.log(`Error creating new organization. ${err}`);
-                    res.status(503).send({ message: 'Internal server error.' })
+                    console.log(`Error creating new user. ${err}`);
+                    res.status(500).send({ message: 'Internal server error.'})
                 });  
             })
             .catch(err => {
-                console.log(`Error checking for organization. ${err}`);
-                res.status(503).send({ message: 'Internal server error' })
-            })
+                console.log(`Error creating new organization. ${err}`);
+                res.status(503).send({ message: 'Internal server error.' })
+            });  
         })
         .catch(err => {
-            console.log('Error checking for username', err)
-            res.status(503).send({message: 'Internal server error'})
+            console.log(`Error checking for organization. ${err}`);
+            res.status(503).send({ message: 'Internal server error' })
         })
     })
     .catch(err => {

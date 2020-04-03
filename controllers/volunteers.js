@@ -18,6 +18,7 @@ ROUTER.get('/', (req, res) => {
             {maker: {$exists: true}}]
     })
     .populate('teamLead.volunteerRoster')
+    .populate('orders')
     .then(volunteers => {
 
         //if rq coming from admin or steering team, send all details
@@ -59,6 +60,7 @@ ROUTER.get('/:id', (req, res) => {
         .populate('driver.teamLead')
         .populate('maker.teamLead')
         .populate('teamLead.volunteerRoster')
+        .populate('orders')
         .then(volunteer => {
             if(req.params.id === req.user._id) {
                 res.send(volunteer)
