@@ -1,5 +1,6 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
+const JWT = require('jsonwebtoken');
 
 // GET /volunteers - find all volunteers and provide info depending on which type of user the rq is coming from
 ROUTER.get('/', (req, res) => {
@@ -47,6 +48,27 @@ ROUTER.get('/', (req, res) => {
     })
     .catch(err => {
         console.log('Error finding volunteers', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
+
+//PUT /volunteers/production - volunteer/maker update their own production inventory
+ROUTER.put('/production', (req, res) => {
+    DB.User.findById(req.user._id)
+    .then(user => {
+        const productionItem = user.maker.makerProduction.id(req.body._id)
+        productionItem.set(req.body)
+        return user.save()
+    })
+    .then(updatedUser => {
+        // sign token to updated user
+        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+            expiresIn: 120
+        });
+        res.send({ token });
+    })
+    .catch(err => {
+        console.log('Error updating maker production', err)
         res.status(503).send({message: 'Internal server error'})
     })
 })
@@ -179,5 +201,13 @@ ROUTER.put('/:id', (req, res) => {
         res.status(403).send({message: 'Forbidden'})
     }
 })
+
+
+
+
+//POST /volunteers/pledge - volunteer/maker create a new pledge
+
+
+//PUT /volunteers/pledge - volunteer/maker update their pledge information
 
 module.exports = ROUTER;

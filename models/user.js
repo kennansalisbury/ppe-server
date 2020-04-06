@@ -176,7 +176,9 @@ const userSchema = new MONGOOSE.Schema({
 });
 // hash password with bcrypt
 userSchema.pre('save', function(next) {
-    this.password = BCRYPT.hashSync(this.password, 12)
+    if(this.isNew) {
+        this.password = BCRYPT.hashSync(this.password, 12)
+    }
     next()
 });
 // remove password from user object
