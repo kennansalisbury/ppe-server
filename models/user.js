@@ -44,7 +44,8 @@ const makerPledgeSchema = new MONGOOSE.Schema({
     readyForDelivery: {
         type: Boolean,
         default: false
-    }
+    },
+    timestamps: Date
 })
 
 const makerSchema = new MONGOOSE.Schema({
