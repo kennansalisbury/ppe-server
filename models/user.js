@@ -9,11 +9,7 @@ const makerProductionSchema = new MONGOOSE.Schema({
         ref: 'Product',
         required: [true, 'Product is required']
     },
-    currentInventory: {
-        type: Number,
-        default: 0
-    },
-    producedToDate: {
+    inventory: {
         type: Number,
         default: 0
     },
@@ -25,7 +21,11 @@ const makerProductionSchema = new MONGOOSE.Schema({
         type: Boolean,
         default: false
     }
-})
+},
+{
+    timestamps: true
+}
+)
 
 const makerPledgeSchema = new MONGOOSE.Schema({
     product: {
@@ -45,6 +45,8 @@ const makerPledgeSchema = new MONGOOSE.Schema({
         type: Boolean,
         default: false
     }
+}, {
+    timestamps: true
 })
 
 const makerSchema = new MONGOOSE.Schema({
@@ -175,7 +177,9 @@ const userSchema = new MONGOOSE.Schema({
 });
 // hash password with bcrypt
 userSchema.pre('save', function(next) {
-    this.password = BCRYPT.hashSync(this.password, 12)
+    if(this.isNew) {
+        this.password = BCRYPT.hashSync(this.password, 12)
+    }
     next()
 });
 // remove password from user object

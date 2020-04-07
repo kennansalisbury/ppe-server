@@ -20,29 +20,6 @@ ROUTER.get('/', (req, res) => {
     })
 })
 
-//GET /customers/demand - demand numbers available to everyone (not protected)
-ROUTER.get('/demand', (req, res) => {
-    DB.User.find({customer: {$exists: true}})
-    .populate('orders')
-    .then(customers => {
-        //grab orders
-        let customersWithOrders = customers.filter(customer => customer.orders)
-        let orders = customersWithOrders.map(customer => customer.orders)
-        
-        //filter out orders not completed (!delivered)
-        let inProgressOrders = orders.filter(order => !order.delivered)
-
-        //return demand numbers
-        let data = inProgressOrders.map(order => order.productOrderDetails)
-        res.send(data)
-    })
-    .catch(err => {
-        console.log('Error finding customers', err)
-        res.status(503).send({message: 'Internal server error'})
-    })
-
-})
-
 //GET /customers/:id - show 1 customer info (customer should be only one to need this route)
 ROUTER.get('/:id', (req, res) => {
     if(!req.user.customer){

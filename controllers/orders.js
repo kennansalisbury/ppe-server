@@ -227,6 +227,29 @@ ROUTER.put('/:id', (req, res) => {
     }
 })
 
+//GET /orders/demand - demand numbers available to everyone (not protected)
+ROUTER.get('/demand', (req, res) => {
+    DB.Order.find({delivered: false, orgReceived: false})
+    .populate('organization')
+    .populate('productOrderDetails.product')
+    .then(orders => {
+        let data = orders.map(order => {
+            console.log(order)
+            return ({
+                product: order.productOrderDetails.product.name,
+                demand: order.productOrderDetails.orgRequestQty,
+                organization: order.organization.name
+            })
+        })
+        res.send(data)
+    })
+    .catch(err => {
+        console.log('Error finding customers', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+
+})
+
 
 
 module.exports = ROUTER;

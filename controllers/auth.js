@@ -14,6 +14,7 @@ ROUTER.post('/login', (req, res) => {
     .populate('maker.teamLead')
     .populate('teamLead.volunteerRoster')
     .populate('orders')
+    .populate('makerPledge')
     .then(user => {
         // confirm user and password exist
         if (!user || !user.password) {

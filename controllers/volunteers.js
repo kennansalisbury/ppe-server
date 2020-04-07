@@ -1,5 +1,6 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
+const JWT = require('jsonwebtoken');
 
 // GET /volunteers - find all volunteers and provide info depending on which type of user the rq is coming from
 ROUTER.get('/', (req, res) => {
@@ -51,6 +52,87 @@ ROUTER.get('/', (req, res) => {
     })
 })
 
+//POST /volunteers/production - volunteer/maker post new production inventory
+ROUTER.post('/production', (req, res) => {
+    DB.User.findById(req.user._id)
+    .then(user => {
+        user.maker.makerProduction.push(req.body)
+        return user.save()
+    })
+    .then(updatedUser => {
+        // sign token to updated user
+        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+            expiresIn: 120
+        });
+        res.send({ token });
+    })
+    .catch(err => {
+        console.log('Error adding maker production inventory', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
+
+//PUT /volunteers/production - volunteer/maker update their own production inventory
+ROUTER.put('/production', (req, res) => {
+    DB.User.findById(req.user._id)
+    .then(user => {
+        const productionItem = user.maker.makerProduction.id(req.body._id)
+        productionItem.set(req.body)
+        return user.save()
+    })
+    .then(updatedUser => {
+        // sign token to updated user
+        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+            expiresIn: 120
+        });
+        res.send({ token });
+    })
+    .catch(err => {
+        console.log('Error updating maker production', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
+
+//POST /volunteers/pledge - volunteer/maker create a new pledge
+ROUTER.post('/pledge', (req, res) => {
+    DB.User.findById(req.user._id)
+    .then(user => {
+        user.maker.makerPledge.push(req.body)
+        return user.save()
+    })
+    .then(updatedUser => {
+        // sign token to updated user
+        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+            expiresIn: 120
+        });
+        res.send({ token });
+    })
+    .catch(err => {
+        console.log('Error creating maker pledge', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
+
+//PUT /volunteers/pledge - volunteer/maker update their pledge information
+ROUTER.put('/production', (req, res) => {
+    DB.User.findById(req.user._id)
+    .then(user => {
+        const pledgeItem = user.maker.makerPledge.id(req.body._id)
+        pledgeItem.set(req.body)
+        return user.save()
+    })
+    .then(updatedUser => {
+        // sign token to updated user
+        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+            expiresIn: 120
+        });
+        res.send({ token });
+    })
+    .catch(err => {
+        console.log('Error updating maker pledge', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+})
 
 // GET /volunteers/:id - if team lead, view only if self, on team roster or unassigned; if maker or driver, view only if self or assigned team lead
 ROUTER.get('/:id', (req, res) => {
@@ -179,5 +261,6 @@ ROUTER.put('/:id', (req, res) => {
         res.status(403).send({message: 'Forbidden'})
     }
 })
+
 
 module.exports = ROUTER;
