@@ -76,8 +76,9 @@ const orderSchema = new MONGOOSE.Schema({
         type: Boolean,
         required: true,
         default: false
-    },
-    timestamps: Date
+    }
+},{
+    timestamps: true
 });
 
 module.exports = MONGOOSE.model('Order', orderSchema);
