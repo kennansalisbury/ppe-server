@@ -33,13 +33,13 @@ APP.use('/volunteers', EXPRESS_JWT({
 }), require('./controllers/volunteers'))
 APP.use('/customers', EXPRESS_JWT({
     secret: process.env.JWT_SECRET
-}).unless({
-    path: [
-        { url: '/customers/demand', methods: ['GET']}
-    ]
 }), require('./controllers/customers'))
 APP.use('/orders', EXPRESS_JWT({
     secret: process.env.JWT_SECRET
+}).unless({
+    path: [
+        { url: '/orders/demand', methods: ['GET']}
+    ]
 }), require('./controllers/orders'))
 APP.use('/products', EXPRESS_JWT({
     secret: process.env.JWT_SECRET

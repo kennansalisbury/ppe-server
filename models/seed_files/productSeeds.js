@@ -15,5 +15,5 @@ let data = [
         startDate: new Date('March 25, 2020')
     }]
 
-
-DB.Product.create(data).then(console.log('products seeded'))
+console.log(data)
+// DB.Product.create(data).then(console.log('products seeded'))
