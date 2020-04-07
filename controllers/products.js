@@ -4,6 +4,10 @@ const ROUTER = require('express').Router();
 //GET  /products - All products
 ROUTER.get('/', (req, res) => {
     DB.Product.find().then(products => res.send(products))
+    .catch(err => {
+        console.log('Error finding products', err)
+        res.status(503).send('Internal server error')
+    })
 })
 
 
