@@ -43,31 +43,36 @@ ROUTER.post('/signup/volunteer', (req, res) => {
         if (user) {
             return res.status(409).send({ message: 'Email already in use'});
         };
-        // if not, check for username
-        DB.User.findOne({username: req.body.username})
-        .then(username => {
-            //if username exists, error
-            if(username) {
-                return res.status(409).send({ message: 'Username already in use'});
-            }
-            // if not, create
-            DB.User.create(req.body)
-            .then(newUser => {
-                // sign token to user
-                let token = JWT.sign(newUser.toJSON(), process.env.JWT_SECRET, {
-                    expiresIn: 120
-                });
-                res.send({ token });
-            })
-            .catch(err => {
-                console.log(`Error creating new user. ${err}`);
-                res.status(500).send({ message: 'Internal server error.'})
-            });
-        })
-        .catch(err => {
-            console.log(`Error in POST /auth/signup. ${err}`);
-            res.status(503).send({ message: 'Database error checking username.' })
-        });  
+
+        // if not, create the user's account (maker, driver), then create a user and reference the new account id
+        if(req.headers['user-type'] === 'Maker' || req.headers['user-type'] === 'Driver') {
+            res.send('maker or driver')
+        }
+        else if(req.headers['user-type'] === 'driver') {
+            res.send('driver sign up')
+        }
+        else if(req.headers['user-type'] === 'maker+driver') {
+            res.send('maker+driver sign up')
+        }
+        else {
+            res.send('other sign up')
+        }
+
+
+        // DB.User.create(req.body)
+        // .then(newUser => {
+
+        //     // sign token to user
+        //     let token = JWT.sign(newUser.toJSON(), process.env.JWT_SECRET, {
+        //         expiresIn: 120
+        //     });
+        //     res.send({ token });
+        // })
+        // .catch(err => {
+        //     console.log(`Error creating new user. ${err}`);
+        //     res.status(500).send({ message: 'Internal server error.'})
+        // });
+ 
     })
     .catch(err => {
         console.log(`Error in POST /auth/signup. ${err}`);
