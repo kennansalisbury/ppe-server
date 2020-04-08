@@ -19,13 +19,13 @@ const userSchema = new MONGOOSE.Schema({
         minlength: [8, 'password must be a minimum of 8 characters']
     },
     phone: {
-        type: Number,
+        type: String,
         required: [true, 'phone number required'],
         minlength: [10, 'phone number must be 10 digits'],
         maxlength: [10, 'phone number must be 10 digits']
     },
     zipcode: {
-        type: Number,
+        type: String,
         required: [true, 'zipcode required'],
         minlength: [5, 'zipcode must be minimum 5 digits'],
         maxlength: [9, 'zipcode can be no longer than 9 digits']

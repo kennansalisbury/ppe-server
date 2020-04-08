@@ -42,20 +42,150 @@ ROUTER.post('/signup/volunteer', (req, res) => {
         // if user exists, error
         if (user) {
             return res.status(409).send({ message: 'Email already in use'});
-        };
-
-        // if not, create the user's account (maker, driver), then create a user and reference the new account id
-        if(req.headers['user-type'] === 'Maker' || req.headers['user-type'] === 'Driver') {
-            res.send('maker or driver')
+        }
+        // if not, create the user's account (maker, driver), then create a user and reference the new account
+        if(req.headers['user-type'] === 'maker') {
+            DB.Maker.create(req.body.maker)
+            .then(newAccount => {
+                DB.User.create({
+                    first_name: req.body.first_name,
+                    last_name: req.body.last_name,
+                    email: req.body.email,
+                    password: req.body.password,
+                    phone: req.body.phone,
+                    zipcode: req.body.zipcode,
+                    region: req.body.region,
+                    other: req.body.other,
+                    maker: newAccount._id
+                }) 
+                .then(user => {
+                    DB.User.findById(user._id)
+                    .populate('maker')
+                    .then(u => {
+                        let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                            expiresIn: 120
+                        });
+                        res.send({ token });
+                    })
+                    .catch(err => {
+                        console.log(`Error populating new user. ${err}`);
+                        res.status(500).send({ message: 'Internal server error.'})
+                    });
+                }) 
+                .catch(err => {
+                    console.log(`Error creating new user. ${err}`);
+                    res.status(500).send({ message: 'Internal server error.'})
+                });
+            })
+            .catch(err => {
+                console.log(`Error creating new account. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
+            });
         }
         else if(req.headers['user-type'] === 'driver') {
-            res.send('driver sign up')
+            DB.Driver.create({orders: []})
+            .then(newAccount => {
+                DB.User.create({
+                    first_name: req.body.first_name,
+                    last_name: req.body.last_name,
+                    email: req.body.email,
+                    password: req.body.password,
+                    phone: req.body.phone,
+                    zipcode: req.body.zipcode,
+                    region: req.body.region,
+                    other: req.body.other,
+                    driver: newAccount._id
+                }) 
+                .then(user => {
+                    let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
+                        expiresIn: 120
+                    });
+                    res.send({ token });
+                })
+                .catch(err => {
+                    console.log(`Error creating new user. ${err}`);
+                    res.status(500).send({ message: 'Internal server error.'})
+                });
+            })
+            .catch(err => {
+                console.log(`Error creating new account. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
+            }); 
         }
         else if(req.headers['user-type'] === 'maker+driver') {
-            res.send('maker+driver sign up')
+            
+            //db.driver.create
+                //req.body.driver
+            //.then newDriverAccount =>
+                //db.maker.create
+                    //req.body.maker
+                    //.then newMakerAccount =>
+                        //db.user.create req.body.user + driver: newDriverAccount._id + maker: newMakerAccount._id
+                        //.then user =>
+                            //tokenData = user data except driver & maker, driver: newDriverAccount, maker: newMakerAccount
+                            //sign to json
+                            //res.send token
+                        //.catch
+                    //.catch
+                //.catch
+            //.catch  
+            DB.Driver.create({orders: []})
+            .then(newDriverAccount => {
+                DB.Maker.create(req.body.maker)
+                .then(newMakerAccount => {
+                    DB.User.create({
+                        first_name: req.body.first_name,
+                        last_name: req.body.last_name,
+                        email: req.body.email,
+                        password: req.body.password,
+                        phone: req.body.phone,
+                        zipcode: req.body.zipcode,
+                        region: req.body.region,
+                        other: req.body.other,
+                        maker: newMakerAccount._id,
+                        driver: newDriverAccount._id
+                    }) 
+                    .then(user => {
+                        DB.User.findById(user._id)
+                        .populate('maker')
+                        .then(u => {
+                            let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                                expiresIn: 120
+                            });
+                            res.send({ token });
+                        })
+                        .catch(err => {
+                            console.log(`Error populating new user. ${err}`);
+                            res.status(500).send({ message: 'Internal server error.'})
+                        });
+                    }) 
+                    .catch(err => {
+                        console.log(`Error creating new user. ${err}`);
+                        res.status(500).send({ message: 'Internal server error.'})
+                    });
+                })
+                .catch(err => {
+                    console.log(`Error creating new account. ${err}`);
+                    res.status(500).send({ message: 'Internal server error.'})
+                });
+            })
+            .catch(err => {
+                console.log(`Error creating new account. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
+            }); 
         }
         else {
-            res.send('other sign up')
+            DB.User.create(req.body)
+            .then(user => {
+                let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
+                    expiresIn: 120
+                });
+                res.send({ token });
+            })
+            .catch(err => {
+                console.log(`Error creating new user. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
+            });
         }
 
 
