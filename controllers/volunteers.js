@@ -114,7 +114,7 @@ ROUTER.post('/pledge', (req, res) => {
 })
 
 //PUT /volunteers/pledge - volunteer/maker update their pledge information
-ROUTER.put('/production', (req, res) => {
+ROUTER.put('/pledge', (req, res) => {
     DB.User.findById(req.user._id)
     .then(user => {
         const pledgeItem = user.maker.makerPledge.id(req.body._id)
