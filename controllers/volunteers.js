@@ -12,7 +12,7 @@ ROUTER.get('/', (req, res) => {
     }
 
     //find all volunteers (!customer fields exist for the user)
-    DB.User.find({customer: {$exists: false}})
+    DB.User.find({customer: {$exists: false}, is_admin: false})
     .populate({
         path: 'maker',
         populate: {
