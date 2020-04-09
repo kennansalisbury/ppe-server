@@ -32,6 +32,13 @@ ROUTER.get('/', (req, res) => {
 
 //PUT /volunteers/inventory - volunteer/maker post new production inventory
 ROUTER.put('/inventory', (req, res) => {
+    
+    //if not admin or user w/ maker id === req.body.maker, send forbidden
+    if(!req.user.is_admin && !req.user.maker._id != req.body.maker) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+    
     //check if inventory already exists for this maker for this product
         //if does, update within the inventory model and then send back the updated inventory
         //if does not, create new inventory in inventory model, then find maker for current user and push inventory id into inventory array
@@ -40,6 +47,7 @@ ROUTER.put('/inventory', (req, res) => {
     //check inventory for document with current maker and productid in req.body
     DB.Inventory.findOne({maker: req.body.maker, product: req.body.product})
     .then(inventory => {
+
         //if exists, update
         if(inventory) {
             console.log('inventory already exists', inventory)
@@ -89,32 +97,17 @@ ROUTER.put('/inventory', (req, res) => {
 })
 
 
-//PUT /volunteers/production - volunteer/maker update their own production inventory
-ROUTER.put('/production', (req, res) => {
-    DB.User.findById(req.user._id)
-    .then(user => {
-        const productionItem = user.maker.makerProduction.id(req.body._id)
-        productionItem.set(req.body)
-        return user.save()
-    })
-    .then(updatedUser => {
-        // sign token to updated user
-        let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
-            expiresIn: 120
-        });
-        res.send({ token });
-    })
-    .catch(err => {
-        console.log('Error updating maker production', err)
-        res.status(503).send({message: 'Internal server error'})
-    })
-})
 
 
 
 
 
-///NOT NEEDED FOR V1(I DONT THINK)
+
+
+
+
+///NOT UPDATED/NOT NEEDED FOR V1(I DONT THINK)
+
 
 // GET /volunteers/:id - if team lead, view only if self, on team roster or unassigned; if maker or driver, view only if self or assigned team lead
 ROUTER.get('/:id', (req, res) => {
