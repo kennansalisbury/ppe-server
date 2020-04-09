@@ -9,9 +9,21 @@ const ASYNC = require('async')
 ROUTER.post('/login', (req, res) => {
     // check if email is in the system
     DB.User.findOne({ email: req.body.email})
-    .populate('maker')
-    .populate('driver')
-    .populate('customer')
+    .populate({
+        path: 'maker',
+        populate: {
+            path: 'inventory',
+            populate: {path: 'product'}
+        }
+    })
+    .populate({
+        path: 'driver',
+        populate: {path: 'orders'}
+    })
+    .populate({
+        path: 'customer',
+        populate: {path: 'orders'}
+    })
     .then(user => {
         // confirm user and password exist
         if (!user || !user.password) {

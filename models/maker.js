@@ -17,11 +17,10 @@ const makerSchema = new MONGOOSE.Schema({
         required: [true, 'state is required'],
         maxlength: [2, 'must be two letters']
     },
-    inventory: {
+    inventory: [{
         type: MONGOOSE.Schema.Types.ObjectId,
         ref: 'Inventory'
-    },
-    total_inventory_to_date: Number,
+    }],
     is_team_lead: {
         type: Boolean,
         default: false
