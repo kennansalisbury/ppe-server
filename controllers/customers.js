@@ -1,16 +1,21 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
 
-//GET /customers - show all customers & organizations info - if admin, steering team, or team lead
+//GET /customers - show all customers & organizations info - if admin
 ROUTER.get('/', (req, res) => {
-    if(!req.user.adminPermissions && !req.user.viewAllPermissions && !req.user.teamLead) {
+    if(!req.user.is_admin) {
         res.status(403).send({message: 'Forbidden'})
         return
     }
 
     DB.User.find({customer: {$exists: true}})
-    .populate('orders')
-    .populate('customer.organization')
+    .populate({
+        path: 'customer',
+        populate: {
+            path: 'orders',
+            populate: {path: 'item.product'}
+        }
+    })
     .then(customers => {
         res.send(customers)
     })
@@ -19,6 +24,17 @@ ROUTER.get('/', (req, res) => {
         res.status(503).send({message: 'Internal server error'})
     })
 })
+
+
+
+
+
+
+
+
+
+//NOT UPDATED/NOT NEEDED FOR V1(I DONT THINK)
+
 
 //GET /customers/:id - show 1 customer info (customer should be only one to need this route)
 ROUTER.get('/:id', (req, res) => {

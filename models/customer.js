@@ -1,15 +1,17 @@
 // dependencies
 const MONGOOSE = require('mongoose');
-// schema
-const organizationSchema = new MONGOOSE.Schema({
-    name: {
+
+//schema
+const customerSchema = new MONGOOSE.Schema({
+    organization: {
         type: String,
         required: [true, 'organization name required']
     },
-    address: {
+    address_one: {
         type: String,
         required: [true, 'organization address required']
     },
+    address_two: String,
     city: {
         type: String,
         required: [true, 'organization city required']
@@ -18,15 +20,18 @@ const organizationSchema = new MONGOOSE.Schema({
         type: String,
         required: [true, 'organization state required']
     },
-    zipcode: {
-        type: String,
-        required: [true, 'organization zipcode required']
-    },
-    numberOfEmployees: {
+    num_of_employees: {
         type: Number,
         required: [true, 'number of employees required']
     },  
-    laundryCapable: Boolean
-});
+    orders: [{
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'Order'
+    }],
+    org_affiliation: {
+        type: String,
+        required: [true, 'affiliation to organization is required']
+    }
+})
 
-module.exports = MONGOOSE.model('Organization', organizationSchema);
+module.exports = MONGOOSE.model('Customer', customerSchema);

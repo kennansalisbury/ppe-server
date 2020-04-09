@@ -2,179 +2,57 @@
 const BCRYPT = require('bcryptjs');
 const MONGOOSE = require('mongoose');
 
-// embedded schema
-const makerProductionSchema = new MONGOOSE.Schema({
-    product: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: [true, 'Product is required']
-    },
-    inventory: {
-        type: Number,
-        default: 0
-    },
-    selfDelivery: {
-        type: Boolean,
-        default: false
-    },
-    pickUpDelivery: {
-        type: Boolean,
-        default: false
-    }
-},
-{
-    timestamps: true
-}
-)
-
-const makerPledgeSchema = new MONGOOSE.Schema({
-    product: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: [true, 'Product is required']
-    },
-    pledgeQty: {
-        type: Number,
-        default: 0
-    },
-    pledgeGoal: {
-        type: Date,
-        required: [true, 'Pledge Goal Date is required']
-    },
-    readyForDelivery: {
-        type: Boolean,
-        default: false
-    }
-}, {
-    timestamps: true
-})
-
-const makerSchema = new MONGOOSE.Schema({
-    address: {
-        type: String,
-        required: [true, 'address is required']
-    },
-    city: {
-        type: String,
-        required: [true, 'city is required']
-    },
-    state: {
-        type: String,
-        required: [true, 'state is required'],
-        maxlength: [2, 'must be two letters']
-    },
-    zipcode: {
-        type: String,
-        required: [true, 'zipcode is required']
-        // minlength: [9, '9-digit zipcode required'],
-        // maxlength: [9, '9-digit zipcode required']
-    },
-    makerProduction: [makerProductionSchema],
-    makerPledge: [makerPledgeSchema],
-    teamLead: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'User'
-    },
-    needMaterials: {
-        type: Boolean,
-        default: false
-    }
-})
-
-const driverSchema = new MONGOOSE.Schema({
-    zipcode: {
-        type: String,
-        required: [true, 'zipcode is required']
-        // minlength: [9, '9-digit zipcode required'],
-        // maxlength: [9, '9-digit zipcode required']
-    },
-    teamLead: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'User'
-    }
-})
-
-const teamLeadSchema = new MONGOOSE.Schema({
-    address: {
-        type: String,
-        required: [true, 'address is required']
-    },
-    city: {
-        type: String,
-        required: [true, 'city is required']
-    },
-    state: {
-        type: String,
-        required: [true, 'state is required'],
-        maxlength: [2, 'must be two letters']
-    },
-    zipcode: {
-        type: String,
-        required: [true, 'zipcode is required']
-        // minlength: [9, '9-digit zipcode required'],
-        // maxlength: [9, '9-digit zipcode required']
-    },
-    volunteerRoster: [{
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
-})
-
-const customerSchema = new MONGOOSE.Schema({
-    orgAffiliation: {
-        type: String,
-        required: [true, 'affiliation to organization is required']
-    },
-    organization: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Organization'
-    }
-})
-
 // user schema
 const userSchema = new MONGOOSE.Schema({
-    firstName: {
+    first_name: {
         type: String,
         required: [true, 'first name required']
     },
-    lastName: String,
-    username: {
+    last_name: String,
+    email: {
         type: String,
-        required: [true, 'username required']
+        required: [true, 'email required']
     },
     password: {
         type: String,
         required: [true, 'password required'],
         minlength: [8, 'password must be a minimum of 8 characters']
     },
-    email: {
-        type: String,
-        required: [true, 'email required']
-    },
     phone: {
         type: String,
         required: [true, 'phone number required'],
-        minlength: [10, 'please enter a valid phone number'],
-        maxlength: [10, 'please enter a valid phone number']
+        minlength: [10, 'phone number must be 10 digits'],
+        maxlength: [10, 'phone number must be 10 digits']
     },
-    maker: makerSchema,
-    driver: driverSchema,
-    teamLead: teamLeadSchema,
-    customer: customerSchema,
-    adminPermissions: {
+    zipcode: {
+        type: String,
+        required: [true, 'zipcode required'],
+        minlength: [5, 'zipcode must be minimum 5 digits'],
+        maxlength: [9, 'zipcode can be no longer than 9 digits']
+    },
+    is_admin: {
         type: Boolean,
         default: false
     },
-    viewAllPermissions: {
-        type: Boolean,
-        default: false
-    },
-    other: String,
-    orders: [{
+    region: String,
+    maker: {
         type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Order'
-    } ] 
+        ref: 'Maker'
+    },
+    driver: {
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'Driver'
+    },
+    customer: {
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'Customer'
+    },
+    other: String
+}, {
+    timestamps: true
 });
+
+
 // hash password with bcrypt
 userSchema.pre('save', function(next) {
     if(this.isNew) {

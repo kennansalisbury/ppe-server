@@ -4,9 +4,8 @@ const MONGOOSE = require('mongoose');
 const productSchema = new MONGOOSE.Schema({
     name: {
         type: String,
-        required: [true, 'product name is required']
-    },
-    startDate: Date
+        required: [true, 'inventory name is required']
+    }
 });
 
 module.exports = MONGOOSE.model('Product', productSchema);
