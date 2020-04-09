@@ -48,9 +48,12 @@ APP.use('/products', EXPRESS_JWT({
         { url: '/products', methods: ['GET']}
     ]
 }), require('./controllers/products'))
+APP.use('/admin', EXPRESS_JWT({
+    secret: process.env.JWT_SECRET
+}), require('./controllers/admin'))
 
 //open routes for testing
-APP.use('/volunteers', require('./controllers/volunteers'));
+// APP.use('/volunteers', require('./controllers/volunteers'));
 // APP.use('/clinics', require('./controllers/clinics'));
 // APP.use('/orders', require('./controllers/orders'));
 // APP.use('/products', require('./controllers/products'));
