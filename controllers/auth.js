@@ -112,23 +112,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 res.status(500).send({ message: 'Internal server error.'})
             }); 
         }
-        else if(req.headers['user-type'] === 'maker+driver') {
-            
-            //db.driver.create
-                //req.body.driver
-            //.then newDriverAccount =>
-                //db.maker.create
-                    //req.body.maker
-                    //.then newMakerAccount =>
-                        //db.user.create req.body.user + driver: newDriverAccount._id + maker: newMakerAccount._id
-                        //.then user =>
-                            //tokenData = user data except driver & maker, driver: newDriverAccount, maker: newMakerAccount
-                            //sign to json
-                            //res.send token
-                        //.catch
-                    //.catch
-                //.catch
-            //.catch  
+        else if(req.headers['user-type'] === 'maker+driver') { 
             DB.Driver.create({orders: []})
             .then(newDriverAccount => {
                 DB.Maker.create(req.body.maker)
@@ -187,22 +171,6 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 res.status(500).send({ message: 'Internal server error.'})
             });
         }
-
-
-        // DB.User.create(req.body)
-        // .then(newUser => {
-
-        //     // sign token to user
-        //     let token = JWT.sign(newUser.toJSON(), process.env.JWT_SECRET, {
-        //         expiresIn: 120
-        //     });
-        //     res.send({ token });
-        // })
-        // .catch(err => {
-        //     console.log(`Error creating new user. ${err}`);
-        //     res.status(500).send({ message: 'Internal server error.'})
-        // });
- 
     })
     .catch(err => {
         console.log(`Error in POST /auth/signup. ${err}`);
@@ -214,104 +182,88 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 ROUTER.post('/signup/order', (req, res) => {
     
     // res.send('test')
-    //FIRST check if user exists, THEN check if organization exists
+    //FIRST check if user exists
         //if user already exists - prompt to log in and place order from there
-        //if org already exists - this org already exists in our system, please use the existing login information to log in and place order from there or contact info@sewstrong if you believe this is an error
     
-    //IF USER & ORG ARE NEW, create new organization THEN create user THEN create order
-
-    let data = []
+    //if new, create new customer THEN create user THEN create order - then populate user and send token
+    
     //check user email and username for existing in database
-    DB.User.findOne({ $or: [{email: req.body.user.email }, {username: req.body.user.username}]})
+    DB.User.findOne({email: req.body.email })
     .then(user => {
         // if user exists, error
         if (user) {
             return res.status(409).send({ message: 'Email or username already in use'});
         };
-        // if not, check for organization with same name/zipcode or same address/zipcode
-        DB.Organization.findOne({
-            $or: [
-                {name: req.body.organization.name, zipcode: req.body.organization.zipcode},
-                {address: req.body.organization.address, zipcode: req.body.organization.zipcode}
-            ]
-        })
-        .then(organization => {
-            //if org exists, error
-            if(organization) {
-                return res.status(409).send({message: 'Organization with the same name and zipcode, or same address already exists'})
-            }
-            
-            //else, create new org
-            DB.Organization.create(req.body.organization)
-            .then(newOrganization => {
-                data.push(newOrganization)
-                console.log('new organization created', newOrganization)
+        //else, create new customer
+        DB.Customer.create(req.body.customer)
+        .then(newCustomer => {
+            console.log('new customer created', newCustomer)
+            //create new user
+            DB.User.create({
+                first_name: req.body.first_name,
+                last_name: req.body.last_name,
+                email: req.body.email,
+                password: req.body.password,
+                phone: req.body.phone,
+                zipcode: req.body.zipcode,
+                region: req.body.region,
+                customer: newCustomer._id
+            })
+            .then(newUser => {
+                console.log('new user created', newUser)
+                let newOrders = []
+                ASYNC.forEach(req.body.productOrderDetails, (productOrder, done) => {
+                    DB.Order.create({
+                        customer: newUser._id,
+                        item: productOrder
+                    })
+                    .then(newOrder => {
+                        console.log('new order created', newOrder)
+                        newOrders.push(newOrder)
+                        done()
+                    })
+                    .catch(done)
+                    }, 
+                    //once all orders created, add them to the data, and add the ids to the customer
+                    () => {
+                    
+                    let orderIds = newOrders.map(order => order._id)
+                    
+                    //add order ids to customer
+                    DB.Customer.findByIdAndUpdate(newCustomer._id, {orders: orderIds}, {new: true})
+                    .then(updatedCustomer => {
+                        console.log('customer updated', updatedCustomer)
 
-                //create new user
-                DB.User.create({
-                    firstName: req.body.user.firstName,
-                    lastName: req.body.user.lastName,
-                    username: req.body.user.username,
-                    password: req.body.user.password,
-                    email: req.body.user.email,
-                    phone: req.body.user.phone,
-                    customer: {
-                        orgAffiliation: req.body.user.customer.orgAffiliation,
-                        organization: newOrganization._id
-                    }
-                })
-                .then(newUser => {
-                    console.log('new user created', newUser)
-                    let newOrders = []
-                    ASYNC.forEach(req.body.productOrderDetails, (productOrder, done) => {
-                        DB.Order.create({
-                            orderNumber: Math.floor(Math.random() * 100000000),
-                            productOrderDetails: productOrder,
-                            customer: newUser._id,
-                            organization: newOrganization._id
-                        })
-                        .then(newOrder => {
-                            console.log('new order created', newOrder)
-                            newOrders.push(newOrder)
-                            done()
-                        })
-                        .catch(done)
-                        }, 
-                        //once all orders created, add them to the data, and add the ids to the user
-                        () => {
-                        data.push(newOrders)
-                        let orderIds = newOrders.map(order => order._id)
-                        
-                        //add order ids to user
-                        DB.User.findByIdAndUpdate(newUser._id, {orders: orderIds}, {new: true})
-                        .then(updatedUser => {
-                            console.log('user updated', updatedUser)
+                        DB.User.findById(newUser._id)
+                        .populate('customer')
+                        .then(user => {
                             // sign token to user
-                            let token = JWT.sign(updatedUser.toJSON(), process.env.JWT_SECRET, {
+                            let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
                                 expiresIn: 120
                             });
                             res.send({ token })
                         })
                         .catch(err => {
-                            console.log('Error updating user', err)
+                            console.log('Error populating new user', err)
                             res.status(503).send('Internal server error')
                         })
-                    })     
-                })
-                .catch(err => {
-                    console.log(`Error creating new user. ${err}`);
-                    res.status(500).send({ message: 'Internal server error.'})
-                });  
+                        
+                    })
+                    .catch(err => {
+                        console.log('Error updating user', err)
+                        res.status(503).send('Internal server error')
+                    })
+                })     
             })
             .catch(err => {
-                console.log(`Error creating new organization. ${err}`);
-                res.status(503).send({ message: 'Internal server error.' })
+                console.log(`Error creating new user. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
             });  
         })
         .catch(err => {
-            console.log(`Error checking for organization. ${err}`);
-            res.status(503).send({ message: 'Internal server error' })
-        })
+            console.log(`Error creating new organization. ${err}`);
+            res.status(503).send({ message: 'Internal server error.' })
+        });  
     })
     .catch(err => {
         console.log('Error checking for email', err)

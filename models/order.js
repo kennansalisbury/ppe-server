@@ -1,33 +1,6 @@
 // dependencies
 const MONGOOSE = require('mongoose');
 // schema
-const productOrderDetailsSchema = new MONGOOSE.Schema({
-    product: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: [true, 'Product is required']
-    },
-    orgRequestQty: Number,
-    toBeFulfilledQty: Number
-})
-
-const productionDetailsSchema = new MONGOOSE.Schema({
-    maker: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    product: {
-        type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true
-    },
-    toBeFulfilledQty: Number,
-    needHelp: {
-        type: Boolean,
-        default: false
-    }
-})
 
 const orderSchema = new MONGOOSE.Schema({
     customer: {
@@ -77,7 +50,7 @@ const orderSchema = new MONGOOSE.Schema({
     item: {
         product: {
             type: MONGOOSE.Schema.Types.ObjectId,
-        ref: 'Product'
+            ref: 'Product'
         },
         total: Number
     },
