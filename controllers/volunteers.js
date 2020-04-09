@@ -32,9 +32,9 @@ ROUTER.get('/', (req, res) => {
 
 //PUT /volunteers/inventory - volunteer/maker post new production inventory
 ROUTER.put('/inventory', (req, res) => {
-    
+
     //if not admin or user w/ maker id === req.body.maker, send forbidden
-    if(!req.user.is_admin && !req.user.maker._id != req.body.maker) {
+    if(!req.user.is_admin && (req.user.maker && (req.user.maker._id != req.body.maker))) {
         res.status(403).send({message: 'Forbidden'})
         return
     }

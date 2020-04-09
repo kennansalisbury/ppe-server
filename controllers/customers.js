@@ -25,6 +25,17 @@ ROUTER.get('/', (req, res) => {
     })
 })
 
+
+
+
+
+
+
+
+
+//NOT UPDATED/NOT NEEDED FOR V1(I DONT THINK)
+
+
 //GET /customers/:id - show 1 customer info (customer should be only one to need this route)
 ROUTER.get('/:id', (req, res) => {
     if(!req.user.customer){
