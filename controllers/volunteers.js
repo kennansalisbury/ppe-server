@@ -48,6 +48,8 @@ ROUTER.put('/inventory', (req, res) => {
     DB.Inventory.findOne({maker: req.body.maker, product: req.body.product})
     .then(inventory => {
 
+        console.log('makerid', req.body.maker, 'productid', req.body.product)
+
         //if exists, update
         if(inventory) {
             console.log('inventory already exists', inventory)

@@ -59,38 +59,72 @@ ROUTER.post('/signup/volunteer', (req, res) => {
         if(req.headers['user-type'] === 'maker') {
             DB.Maker.create(req.body.maker)
             .then(newAccount => {
-                DB.User.create({
-                    first_name: req.body.first_name,
-                    last_name: req.body.last_name,
-                    email: req.body.email,
-                    password: req.body.password,
-                    phone: req.body.phone,
-                    zipcode: req.body.zipcode,
-                    region: req.body.region,
-                    other: req.body.other,
-                    maker: newAccount._id
-                }) 
-                .then(user => {
-                    DB.User.findById(user._id)
-                    .populate('maker')
-                    .then(u => {
-                        let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                            expiresIn: 120
+                let newInventories = []
+                console.log('creating inventorys, right before async with req.body.inventory:', req.body.inventory)
+                ASYNC.forEach(req.body.inventory, (product, done) => {
+                    DB.Inventory.create({
+                        product: product.product,
+                        total_units: product.total_units,
+                        total_inventory_to_date: product.total_inventory_to_date,
+                        maker: newAccount._id
+                    })
+                    .then(newInventory => {
+                        console.log('new inventory created', newInventory)
+                        newInventories.push(newInventory)
+                        done()
+                    })
+                    .catch(done)
+                },
+                //once all inventories created, add ids to maker and continue
+                () => {
+                    let inventoryIds = newInventories.map(inventory => inventory._id)
+                    DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
+                    .then(updatedMaker => {
+                        console.log('maker updated with inventorys', updatedMaker)
+                        DB.User.create({
+                            first_name: req.body.first_name,
+                            last_name: req.body.last_name,
+                            email: req.body.email,
+                            password: req.body.password,
+                            phone: req.body.phone,
+                            zipcode: req.body.zipcode,
+                            region: req.body.region,
+                            other: req.body.other,
+                            maker: updatedMaker._id
+                        }) 
+                        .then(user => {
+                            DB.User.findById(user._id)
+                            .populate({
+                                path: 'maker',
+                                populate: {
+                                    path: 'inventory',
+                                    populate: {path: 'product'}
+                                }
+                            })
+                            .then(u => {
+                                let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                                    expiresIn: 120
+                                });
+                                res.send({ token });
+                            })
+                            .catch(err => {
+                                console.log(`Error populating new user. ${err}`);
+                                res.status(500).send({ message: 'Internal server error.'})
+                            });
+                        }) 
+                        .catch(err => {
+                            console.log(`Error creating new user. ${err}`);
+                            res.status(500).send({ message: 'Internal server error.'})
                         });
-                        res.send({ token });
                     })
                     .catch(err => {
-                        console.log(`Error populating new user. ${err}`);
+                        console.log(`Error adding inventory to maker. ${err}`);
                         res.status(500).send({ message: 'Internal server error.'})
                     });
-                }) 
-                .catch(err => {
-                    console.log(`Error creating new user. ${err}`);
-                    res.status(500).send({ message: 'Internal server error.'})
-                });
+                })          
             })
             .catch(err => {
-                console.log(`Error creating new account. ${err}`);
+                console.log(`Error creating new maker account. ${err}`);
                 res.status(500).send({ message: 'Internal server error.'})
             });
         }
