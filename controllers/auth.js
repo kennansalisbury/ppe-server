@@ -327,7 +327,10 @@ ROUTER.post('/signup/order', (req, res) => {
 
                         //populate and send user token
                         DB.User.findById(newUser._id)
-                        .populate('customer')
+                        .populate({
+                            path: 'customer',
+                            populate: {path: 'orders'}
+                        })
                         .then(user => {
                             // sign token to user
                             let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
