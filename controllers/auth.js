@@ -35,7 +35,7 @@ ROUTER.post('/login', (req, res) => {
             return res.status(406).send({ message: 'Invalid credentials.'});
         };
         let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-            expiresIn: 60 * 60 * 8
+            expiresIn: 60 * 15
         });
         res.send({ token });
     })
@@ -103,7 +103,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                             })
                             .then(u => {
                                 let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                    expiresIn: 120
+                                    expiresIn: 60 * 15
                                 });
                                 res.send({ token });
                             })
@@ -144,7 +144,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 }) 
                 .then(user => {
                     let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                        expiresIn: 120
+                        expiresIn: 60 * 15
                     });
                     res.send({ token });
                 })
@@ -208,7 +208,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                                 })
                                 .then(u => {
                                     let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                        expiresIn: 120
+                                        expiresIn: 60 * 15
                                     });
                                     res.send({ token });
                                 })
@@ -242,7 +242,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
             DB.User.create(req.body)
             .then(user => {
                 let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                    expiresIn: 120
+                    expiresIn: 60 * 15
                 });
                 res.send({ token });
             })
@@ -319,7 +319,7 @@ ROUTER.post('/signup/order', (req, res) => {
                         .then(user => {
                             // sign token to user
                             let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                                expiresIn: 120
+                                expiresIn: 60 * 15
                             });
                             res.send({ token })
                         })
