@@ -283,7 +283,7 @@ ROUTER.post('/signup/order', (req, res) => {
     .then(user => {
         // if user exists, error
         if (user) {
-            return res.status(409).send({ message: 'Email or username already in use'});
+            return res.status(409).send({ message: 'Email already in use'});
         };
 
         //if new, create new customer THEN create user THEN create order - then populate user and send token
