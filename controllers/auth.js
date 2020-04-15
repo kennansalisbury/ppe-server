@@ -22,7 +22,8 @@ ROUTER.post('/login', (req, res) => {
     })
     .populate({
         path: 'customer',
-        populate: {path: 'orders'}
+        populate: {path: 'orders'},
+        populate: {path: 'org_type'}
     })
     .then(user => {
         // confirm user and password exist
