@@ -2,6 +2,8 @@ const DB = require('../models');
 const ROUTER = require('express').Router();
 const JWT = require('jsonwebtoken');
 
+//THIS VERSION OF THE GET ROUTE WILL NEED TO CHANGE/THIS IS TAKEN CARE OF IN ADMIN ROUTE
+//THIS ROUTE CAN BE FOR TEAM LEADS TO VIEW VOLUNTEERS IN THEIR REGION/ON THEIR TEAM
 // GET /volunteers - find all volunteers (admin)
 ROUTER.get('/', (req, res) => {
     
@@ -30,7 +32,7 @@ ROUTER.get('/', (req, res) => {
     })
 })
 
-//PUT /volunteers/inventory - volunteer/maker post new production inventory
+//PUT /volunteers/inventory - admin or volunteer/maker post new production inventory
 ROUTER.put('/inventory', (req, res) => {
 
     //if not admin or user w/ maker id === req.body.maker, send forbidden

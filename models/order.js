@@ -52,7 +52,8 @@ const orderSchema = new MONGOOSE.Schema({
             type: MONGOOSE.Schema.Types.ObjectId,
             ref: 'Product'
         },
-        total: Number
+        total: Number,
+        delivered: Number
     },
     drivers: [{
         type: MONGOOSE.Schema.Types.ObjectId,
