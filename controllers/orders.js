@@ -157,6 +157,103 @@ ROUTER.get('/', (req, res) => {
 
 })
 
+//POST /orders (admin only for now)
+ROUTER.post('/', (req, res) => {
+    if(!req.user.is_admin && !req.user.customer) {
+        res.status(403).send({message: 'Forbidden'})
+    }
+
+    //if req.body indicates user data, need to create new user & customer & order
+    //else req.body will include existing customer id and will need to just create new order and push onto customer.orders
+
+    if(req.body.user) {
+        //FIRST check if user exists
+        //if user already exists - prompt to choose from existing customers
+    DB.User.findOne({email: req.body.user.email })
+    .then(user => {
+        // if user exists, error
+        if (user) {
+            return res.status(409).send({ message: 'Email already in use'});
+        };
+
+        //if new, create new customer THEN create user THEN create order - then populate user and send token
+        DB.Customer.create(req.body.customer)
+        .then(newCustomer => {
+            console.log('new customer created', newCustomer)
+            //create new user with ref to customer id
+            DB.User.create({
+                first_name: req.body.user.first_name,
+                last_name: req.body.user.last_name,
+                email: req.body.user.email,
+                password: req.body.user.password,
+                phone: req.body.user.phone,
+                zipcode: req.body.user.zipcode,
+                region: req.body.user.region,
+                customer: newCustomer._id
+            })
+            .then(newUser => {
+                console.log('new user created', newUser)  
+                //create new order
+                DB.Order.create({
+                    customer: newCustomer._id,
+                    item: req.body.item 
+                })
+                .then(order => {
+                    //then add order id to customer
+                    DB.Customer.findByIdAndUpdate(newCustomer._id, {orders: [order._id]}, {new: true})
+                    .then(updatedCustomer => {
+                        console.log('order added to customer', updatedCustomer)
+                        res.send(order)
+                    })
+                    .catch(err => {
+                        console.log('Error adding order to customer', err)
+                        res.status(503).send({message: 'Internal server error'})
+                    })
+
+                })
+                .catch(err => {
+                    console.log('Error creating order', err)
+                    res.status(503).send({message: 'Internal server error'})
+                })
+            })
+            .catch(err => {
+                console.log(`Error creating new user. ${err}`);
+                res.status(500).send({ message: 'Internal server error.'})
+            });  
+        })
+        .catch(err => {
+            console.log(`Error creating new customer. ${err}`);
+            res.status(503).send({ message: 'Internal server error.' })
+        });  
+    })
+    .catch(err => {
+        console.log('Error checking for email', err)
+        res.status(503).send({message: 'Internal server error'})
+    })
+
+       
+    }
+    else {
+         //create new order
+         DB.Order.create(req.body)
+         .then(order => {
+            //then add order id to customer
+            DB.Customer.findByIdAndUpdate(req.body.customer, {$push : {orders: order}}, {new: true})
+            .then(updatedCustomer => {
+                console.log('order added to customer', updatedCustomer)
+                res.send(order)
+            })
+         
+         })
+         .catch(err => {
+             console.log('Error creating order', err)
+             res.status(503).send({message: 'Internal server error'})
+         })
+    }
+    
+})
+
+
 //GET /orders/demand - demand numbers available to everyone (not protected)
 ROUTER.get('/demand', (req, res) => {
     DB.Order.find({completed_confirmed: false, cust_cancelled: false, admin_cancelled: false})
@@ -199,73 +296,6 @@ ROUTER.put('/:id', (req, res) => {
             res.status(503).send({message: 'Internal server error'})
         })
     }
-
-    // //if team lead can make updates to assigned driver, production details/makers etc., qty to be fulfilled, and order status items
-    // if(req.user.teamLead){
-    //     DB.Order.findByIdAndUpdate(
-    //         req.params.id, 
-    //         {
-    //             driver: req.body.driver, 
-    //             productionDetails: req.body.productionDetails, 
-    //             "productOrderDetails.toBeFulfilledQty": req.body.toBeFulfilledQty,
-    //             collected: req.body.collected,
-    //             delivered: req.body.delivered,
-    //             readyForDelivery: req.body.readyForDelivery
-    //         }, 
-    //         {new: true}
-    //     )
-    //     .then(updatedOrder => {
-    //         res.send(updatedOrder)
-    //     })
-    //     .catch(err => {
-    //         console.log('Error finding orders', err)
-    //         res.status(503).send({message: 'Internal server error'})
-    //     })
-    // }
-
-    // // if driver can make updates to order status - collected/delivered
-    // if(req.user.driver) {
-    //     DB.Order.findByIdAndUpdate(
-    //         req.params.id, 
-    //         {
-    //             collected: req.body.collected,
-    //             delivered: req.body.delivered,
-    //         }, 
-    //         {new: true}
-    //     )
-    //     .then(updatedOrder => {
-    //         res.send(updatedOrder)
-    //     })
-    //     .catch(err => {
-    //         console.log('Error finding orders', err)
-    //         res.status(503).send({message: 'Internal server error'})
-    //     })
-    // }
-    // // if customer can make updates to: 
-    //     //status updates - org received, withdrawRQ,
-    //     // qty requested (if inventory not collected yet)
-
-    // if(req.user.customer) {
-    //     DB.Order.findByIdAndUpdate(
-    //         req.params.id, 
-    //         {
-    //             productOrderDetails: {
-    //                 orgRequestQty: req.body.orgRequestQty
-    //             },
-    //             withdrawRQ: req.body.withdrawRQ,
-    //             orgReceived: req.body.orgReceived
-    //         }, 
-    //         {new: true}
-    //     )
-    //     .then(updatedOrder => {
-    //         res.send(updatedOrder)
-    //     })
-    //     .catch(err => {
-    //         console.log('Error finding orders', err)
-    //         res.status(503).send({message: 'Internal server error'})
-    //     })
-
-    // }
 
     else {
         res.status(403).send({message: 'Forbidden'})

@@ -35,7 +35,7 @@ ROUTER.post('/login', (req, res) => {
             return res.status(406).send({ message: 'Invalid credentials.'});
         };
         let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-            expiresIn: 60 * 60 * 8
+            expiresIn: 60 * 15
         });
         res.send({ token });
     })
@@ -48,19 +48,23 @@ ROUTER.post('/login', (req, res) => {
 // POST /auth/signup/volunteer - sign up for volunteer
 ROUTER.post('/signup/volunteer', (req, res) => {
 
-    // if email exists, user is already in the system. can create a failsafe for this
+    // if email exists, user is already in the system
     DB.User.findOne({ email: req.body.email })
     .then(user => {
         // if user exists, error
         if (user) {
             return res.status(409).send({ message: 'Email already in use'});
         }
+        
         // if not, create the user's account (maker, driver), then create a user and reference the new account
+
+        //IF USER SIGNING UP IS A MAKER
         if(req.headers['user-type'] === 'maker') {
+            //first create the maker account
             DB.Maker.create(req.body.maker)
             .then(newAccount => {
                 let newInventories = []
-                console.log('creating inventorys, right before async with req.body.inventory:', req.body.inventory)
+                //create new blank inventory for each product
                 ASYNC.forEach(req.body.inventory, (product, done) => {
                     DB.Inventory.create({
                         product: product.product,
@@ -75,12 +79,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                     })
                     .catch(done)
                 },
-                //once all inventories created, add ids to maker and continue
+                //once all inventories created, add ids to maker
                 () => {
                     let inventoryIds = newInventories.map(inventory => inventory._id)
                     DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
                     .then(updatedMaker => {
-                        console.log('maker updated with inventorys', updatedMaker)
+                        console.log('maker updated with inventories', updatedMaker)
+                        //then create user and include the new maker id in maker ref for user
                         DB.User.create({
                             first_name: req.body.first_name,
                             last_name: req.body.last_name,
@@ -94,23 +99,23 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                         }) 
                         .then(user => {
                             DB.User.findById(user._id)
-                            .populate({
-                                path: 'maker',
-                                populate: {
-                                    path: 'inventory',
-                                    populate: {path: 'product'}
-                                }
-                            })
-                            .then(u => {
-                                let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                    expiresIn: 120
-                                });
-                                res.send({ token });
-                            })
-                            .catch(err => {
-                                console.log(`Error populating new user. ${err}`);
-                                res.status(500).send({ message: 'Internal server error.'})
+                        .populate({
+                            path: 'maker',
+                            populate: {
+                                path: 'inventory',
+                                populate: {path: 'product'}
+                            }
+                        })
+                        .then(u => {
+                            let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                                expiresIn: 60 * 15
                             });
+                            res.send({ token });
+                        })
+                        .catch(err => {
+                            console.log(`Error populating new user. ${err}`);
+                            res.status(500).send({ message: 'Internal server error.'})
+                        });
                         }) 
                         .catch(err => {
                             console.log(`Error creating new user. ${err}`);
@@ -128,6 +133,8 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 res.status(500).send({ message: 'Internal server error.'})
             });
         }
+
+        //IF USER SIGNING UP IS A DRIVER
         else if(req.headers['user-type'] === 'driver') {
             DB.Driver.create({orders: []})
             .then(newAccount => {
@@ -144,7 +151,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 }) 
                 .then(user => {
                     let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                        expiresIn: 120
+                        expiresIn: 60 * 15
                     });
                     res.send({ token });
                 })
@@ -158,13 +165,15 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 res.status(500).send({ message: 'Internal server error.'})
             }); 
         }
+
+        //IF USER SIGNING UP IS A MAKER & DRIVER
         else if(req.headers['user-type'] === 'maker+driver') { 
             DB.Driver.create({orders: []})
             .then(newDriverAccount => {
                 DB.Maker.create(req.body.maker)
                 .then(newAccount => {
                     let newInventories = []
-                    console.log('creating inventorys, right before async with req.body.inventory:', req.body.inventory)
+                    // create new blank inventory for each product
                     ASYNC.forEach(req.body.inventory, (product, done) => {
                         DB.Inventory.create({
                             product: product.product,
@@ -179,12 +188,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                         })
                         .catch(done)
                     },
-                    //once all inventories created, add ids to maker and continue
+                    //once all inventories created, add ids to maker
                     () => {
                         let inventoryIds = newInventories.map(inventory => inventory._id)
                         DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
                         .then(updatedMaker => {
-                            console.log('maker updated with inventorys', updatedMaker)
+                            console.log('maker updated with inventories', updatedMaker)
+                            //create user and add maker and driver ids
                             DB.User.create({
                                 first_name: req.body.first_name,
                                 last_name: req.body.last_name,
@@ -206,9 +216,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                                         populate: {path: 'product'}
                                     }
                                 })
+                                .populate({
+                                    path: 'driver',
+                                    populate: {path: 'orders'}
+                                })
                                 .then(u => {
                                     let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                        expiresIn: 120
+                                        expiresIn: 60 * 15
                                     });
                                     res.send({ token });
                                 })
@@ -238,11 +252,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                 res.status(500).send({ message: 'Internal server error.'})
             }); 
         }
+
+        //IF OTHER
         else {
             DB.User.create(req.body)
             .then(user => {
                 let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                    expiresIn: 120
+                    expiresIn: 60 * 15
                 });
                 res.send({ token });
             })
@@ -261,24 +277,20 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 //POST /auth/signup/order - sign up customer & place order request
 ROUTER.post('/signup/order', (req, res) => {
     
-    // res.send('test')
     //FIRST check if user exists
         //if user already exists - prompt to log in and place order from there
-    
-    //if new, create new customer THEN create user THEN create order - then populate user and send token
-    
-    //check user email and username for existing in database
     DB.User.findOne({email: req.body.email })
     .then(user => {
         // if user exists, error
         if (user) {
-            return res.status(409).send({ message: 'Email or username already in use'});
+            return res.status(409).send({ message: 'Email already in use'});
         };
-        //else, create new customer
+
+        //if new, create new customer THEN create user THEN create order - then populate user and send token
         DB.Customer.create(req.body.customer)
         .then(newCustomer => {
             console.log('new customer created', newCustomer)
-            //create new user
+            //create new user with ref to customer id
             DB.User.create({
                 first_name: req.body.first_name,
                 last_name: req.body.last_name,
@@ -292,6 +304,7 @@ ROUTER.post('/signup/order', (req, res) => {
             .then(newUser => {
                 console.log('new user created', newUser)
                 let newOrders = []
+                //create new orders
                 ASYNC.forEach(req.body.productOrderDetails, (productOrder, done) => {
                     DB.Order.create({
                         customer: newUser._id,
@@ -304,30 +317,31 @@ ROUTER.post('/signup/order', (req, res) => {
                     })
                     .catch(done)
                     }, 
-                    //once all orders created, add them to the data, and add the ids to the customer
+                    //once all orders created, add the ids to the customer
                     () => {
                     
                     let orderIds = newOrders.map(order => order._id)
-                    
-                    //add order ids to customer
                     DB.Customer.findByIdAndUpdate(newCustomer._id, {orders: orderIds}, {new: true})
                     .then(updatedCustomer => {
                         console.log('customer updated', updatedCustomer)
 
+                        //populate and send user token
                         DB.User.findById(newUser._id)
-                        .populate('customer')
+                        .populate({
+                            path: 'customer',
+                            populate: {path: 'orders'}
+                        })
                         .then(user => {
                             // sign token to user
                             let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                                expiresIn: 120
+                                expiresIn: 60 * 15
                             });
                             res.send({ token })
                         })
                         .catch(err => {
                             console.log('Error populating new user', err)
                             res.status(503).send('Internal server error')
-                        })
-                        
+                        })  
                     })
                     .catch(err => {
                         console.log('Error updating user', err)
@@ -349,9 +363,10 @@ ROUTER.post('/signup/order', (req, res) => {
         console.log('Error checking for email', err)
         res.status(503).send({message: 'Internal server error'})
     })
-
-
 })
+
+
+// DO WE NEED THIS?
 
 // GET /current/user
 ROUTER.get('/current/user', (req, res) => {
