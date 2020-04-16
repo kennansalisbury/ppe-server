@@ -209,7 +209,7 @@ ROUTER.post('/account', (req, res) => {
     }
 })
 
-ROUTER.delete('/account', (req, res) => {
+ROUTER.put('/account', (req, res) => {
     //either delete maker and/or driver account and remove from user
     // OR just remove from user (do we need to keep for tracking totals?)
 })
@@ -276,12 +276,12 @@ ROUTER.put('/:id', (req, res) => {
         .then(updatedUser => {
             DB.Driver.findByIdAndUpdate(
                 updatedUser.driver,
-                req.body.driver, 
+                req.body.makerdriver.driver, 
                 {new: true})
             .then(updatedDriver => {
                 DB.Maker.findByIdAndUpdate(
                     updatedUser.maker,
-                    req.body.maker,
+                    req.body.makerdriver.maker,
                     {new: true}
                 )
                 .then(updatedMaker => {
