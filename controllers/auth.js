@@ -5,6 +5,8 @@ const DB = require('../models');
 const ROUTER = require('express').Router();
 const ASYNC = require('async')
 
+const errorCatch = require('../errorCatch') 
+
 // POST /auth/login
 ROUTER.post('/login', (req, res) => {
     // check if email is in the system
@@ -388,6 +390,16 @@ ROUTER.post('/signup/order', (req, res) => {
         console.log('Error checking for email', err)
         res.status(503).send({message: 'Internal server error'})
     })
+})
+
+ROUTER.get('/info', (req, res) => {
+    DB.Product.find().then(products => {
+        DB.OrgType.find().then(orgTypes => {
+            res.send({products, orgTypes})
+        })
+        .catch(err => errorCatch(err, 'Error finding org types', res, 503, 'Internal server error'))
+    })
+    .catch(err => errorCatch(err, 'Error finding products', res, 503, 'Internal server error'))
 })
 
 
