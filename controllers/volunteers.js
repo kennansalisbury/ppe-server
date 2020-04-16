@@ -217,9 +217,51 @@ ROUTER.post('/account/:id', (req, res) => {
     }
 })
 
-ROUTER.put('/account', (req, res) => {
-    //either delete maker and/or driver account and remove from user
-    // OR just remove from user (do we need to keep for tracking totals?)
+ROUTER.put('/account/:id', (req, res) => {
+    
+    //if not admin or user w/ params id, send forbidden
+    if(!req.user.is_admin && req.user._id !== req.params.id) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+    //remove specified accounts from user
+    if(req.body.removeAccount === 'maker') {
+        DB.User.findByIdAndUpdate(
+            req.params.id,
+            {$unset: {maker: ""}},
+            {new: true}
+        )
+        .then(updatedUser => {
+            res.send(updatedUser)
+        })
+        .catch(err => errorCatch(err, 'Error finding user or removing account', res, 503, 'Internal server error'))
+    }
+    else if(req.body.removeAccount === 'driver') {
+        DB.User.findByIdAndUpdate(
+            req.params.id,
+            {$unset: {driver: ""}},
+            {new: true}
+        )
+        .then(updatedUser => {
+            res.send(updatedUser)
+        })
+        .catch(err => errorCatch(err, 'Error finding user or removing account', res, 503, 'Internal server error'))
+    }
+    else if(req.body.removeAccount === 'maker+driver') {
+        DB.User.findByIdAndUpdate(
+            req.params.id,
+            {$unset: {driver: "", maker: ""}},
+            {new: true}
+        )
+        .then(updatedUser => {
+            res.send(updatedUser)
+        })
+        .catch(err => errorCatch(err, 'Error finding user or removing account', res, 503, 'Internal server error'))
+    }
+    else {
+        res.status(403).send({message: 'Forbidden'})
+    }
 })
 
 //PUT /volunteers/:id - update volunteer info (admin)
