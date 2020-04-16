@@ -31,6 +31,9 @@ let data = [
     },
     {
         name: 'Essential Worker',
+    },
+    {
+        name: 'Other'
     }
 ]
 

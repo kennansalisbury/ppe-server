@@ -35,7 +35,8 @@ const customerSchema = new MONGOOSE.Schema({
     org_type: {
         type: MONGOOSE.Schema.Types.ObjectId,
         ref: 'OrgType'
-    }
+    },
+    org_type_other: String
 })
 
 module.exports = MONGOOSE.model('Customer', customerSchema);

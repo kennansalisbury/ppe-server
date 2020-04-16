@@ -310,6 +310,7 @@ ROUTER.post('/signup/order', (req, res) => {
         };
 
         //if new, create new customer THEN create user THEN create order - then populate user and send token
+        if(req.body.customer.org_type)
         DB.Customer.create(req.body.customer)
         .then(newCustomer => {
             console.log('new customer created', newCustomer)
@@ -352,7 +353,8 @@ ROUTER.post('/signup/order', (req, res) => {
                         DB.User.findById(newUser._id)
                         .populate({
                             path: 'customer',
-                            populate: {path: 'orders'}
+                            populate: {path: 'orders'},
+                            populate: {path: 'org_type'}
                         })
                         .then(user => {
                             // sign token to user
