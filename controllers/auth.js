@@ -58,9 +58,10 @@ ROUTER.post('/signup/volunteer', (req, res) => {
         }
         
         // if not, create the user's account (maker, driver), then create a user and reference the new account
-
+        console.log(req.headers)
         //IF USER SIGNING UP IS A MAKER
         if(req.headers['user-type'] === 'maker') {
+            console.log('creating new maker')
             //first create the maker account
             DB.Maker.create(req.body.maker)
             .then(newAccount => {
@@ -100,23 +101,23 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                         }) 
                         .then(user => {
                             DB.User.findById(user._id)
-                        .populate({
-                            path: 'maker',
-                            populate: {
-                                path: 'inventory',
-                                populate: {path: 'product'}
-                            }
-                        })
-                        .then(u => {
-                            let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                expiresIn: 60 * 15
+                            .populate({
+                                path: 'maker',
+                                populate: {
+                                    path: 'inventory',
+                                    populate: {path: 'product'}
+                                }
+                            })
+                            .then(u => {
+                                let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                                    expiresIn: 60 * 15
+                                });
+                                res.send({ token });
+                            })
+                            .catch(err => {
+                                console.log(`Error populating new user. ${err}`);
+                                res.status(500).send({ message: 'Internal server error.'})
                             });
-                            res.send({ token });
-                        })
-                        .catch(err => {
-                            console.log(`Error populating new user. ${err}`);
-                            res.status(500).send({ message: 'Internal server error.'})
-                        });
                         }) 
                         .catch(err => {
                             console.log(`Error creating new user. ${err}`);
@@ -137,7 +138,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF USER SIGNING UP IS A DRIVER
         else if(req.headers['user-type'] === 'driver') {
-            DB.Driver.create({orders: []})
+            console.log('creating new driver')
+            DB.Driver.create({
+                orders: [],
+                distance_willing_to_drive: req.body.driver.distance_willing_to_drive,
+                days_available: req.body.driver.days_available,
+                times_available: req.body.driver.times_available
+            })
             .then(newAccount => {
                 DB.User.create({
                     first_name: req.body.first_name,
@@ -151,10 +158,18 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                     driver: newAccount._id
                 }) 
                 .then(user => {
-                    let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                        expiresIn: 60 * 15
+                    DB.User.findById(user._id)
+                    .populate('driver')
+                    .then(u => {
+                        let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                            expiresIn: 60 * 15
+                        });
+                        res.send({ token });
+                    })
+                    .catch(err => {
+                        console.log(`Error populating new user. ${err}`);
+                        res.status(500).send({ message: 'Internal server error.'})
                     });
-                    res.send({ token });
                 })
                 .catch(err => {
                     console.log(`Error creating new user. ${err}`);
@@ -169,7 +184,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF USER SIGNING UP IS A MAKER & DRIVER
         else if(req.headers['user-type'] === 'maker+driver') { 
-            DB.Driver.create({orders: []})
+            console.log('creating new maker + driver')
+            DB.Driver.create({
+                orders: [],
+                distance_willing_to_drive: req.body.driver.distance_willing_to_drive,
+                days_available: req.body.driver.days_available,
+                times_available: req.body.driver.times_available
+            })
             .then(newDriverAccount => {
                 DB.Maker.create(req.body.maker)
                 .then(newAccount => {
@@ -256,6 +277,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF OTHER
         else {
+            console.log('creating new other')
             DB.User.create(req.body)
             .then(user => {
                 let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
