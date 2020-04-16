@@ -1,6 +1,8 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
-const JWT = require('jsonwebtoken');
+const ASYNC = require('async')
+
+const errorCatch = require('../errorCatch') 
 
 //THIS VERSION OF THE GET ROUTE WILL NEED TO CHANGE/THIS IS TAKEN CARE OF IN ADMIN ROUTE
 //THIS ROUTE CAN BE FOR TEAM LEADS TO VIEW VOLUNTEERS IN THEIR REGION/ON THEIR TEAM
@@ -97,6 +99,120 @@ ROUTER.put('/inventory', (req, res) => {
  
 })
 
+ROUTER.post('/account', (req, res) => {
+    //if req.body.maker: create new maker, create new blank inventories, and add to maker, then find user and update to add new maker id
+    
+    if(req.body.maker) {
+        DB.Maker.create(req.body.maker)
+        .then(newAccount => {
+            let newInventories = []
+            //create new blank inventory for each product
+            ASYNC.forEach(req.body.inventory, (product, done) => {
+                DB.Inventory.create({
+                    product: product.product,
+                    total_units: product.total_units,
+                    total_inventory_to_date: product.total_inventory_to_date,
+                    maker: newAccount._id
+                })
+                .then(newInventory => {
+                    console.log('new inventory created', newInventory)
+                    newInventories.push(newInventory)
+                    done()
+                })
+                .catch(done)
+            },
+            //once all inventories created, add ids to maker, then update user with any user updates in req.body
+            () => {
+                let inventoryIds = newInventories.map(inventory => inventory._id)
+                DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
+                .then(updatedMaker => {
+                    console.log('maker updated with inventories', updatedMaker)
+                    //then find user and update with new maker ref
+                    DB.User.findByIdAndUpdate(
+                        req.params.id, 
+                        {maker: updatedMaker._id}, 
+                        {new: true}) 
+                    .then(updatedUser => {
+                        res.send(updatedUser)
+                    }) 
+                    .catch(err => errorCatch(err, 'Error updating user', res, 503, 'Internal server error'));
+                })
+                .catch(err => errorCatch(err, 'Error adding inventory to maker', res, 503, 'Internal server error'));
+            })
+        })
+        .catch(err => errorCatch(err, 'Error creating new maker account', res, 503, 'Internal server error'));
+    }
+    //else if req.body.driver: create new driver, then update user/add driver
+    else if(req.body.driver) {
+        DB.Driver.create(req.body.driver)
+        .then(newAccount => {
+            //then find user and update with new driver ref
+            DB.User.findByIdAndUpdate(
+                req.params.id, 
+                {driver: updatedDriver._id}, 
+                {new: true}) 
+            .then(updatedUser => {
+                res.send(updatedUser)
+            }) 
+            .catch(err => errorCatch(err, 'Error updating user', res, 503, 'Internal server error'));
+        })
+        .catch(err => errorCatch(err, 'Error creating new driver account', res, 503, 'Internal server error'));
+    }
+    //else if req.body.makerdriver: 
+        //create new maker, create blank inventories, add inventories to maker
+        //then create new driver
+        //then find user and update with new ids
+    else if(req.body.makerdriver) {
+
+        DB.Maker.create(req.body.makerdriver.maker)
+        .then(newAccount => {
+            let newInventories = []
+            //create new blank inventory for each product
+            ASYNC.forEach(req.body.makerdriver.inventory, (product, done) => {
+                DB.Inventory.create({
+                    product: product.product,
+                    total_units: product.total_units,
+                    total_inventory_to_date: product.total_inventory_to_date,
+                    maker: newAccount._id
+                })
+                .then(newInventory => {
+                    console.log('new inventory created', newInventory)
+                    newInventories.push(newInventory)
+                    done()
+                })
+                .catch(done)
+            },
+            //once all inventories created, add ids to maker, then update user with any user updates in req.body
+            () => {
+                let inventoryIds = newInventories.map(inventory => inventory._id)
+                DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
+                .then(updatedMaker => {
+                    console.log('maker updated with inventories', updatedMaker)
+                    DB.Driver.create(req.body.makerdriver.driver)
+                    .then(updatedDriver => {
+                        //then find user and update with new driver ref
+                        DB.User.findByIdAndUpdate(
+                            req.params.id, 
+                            {driver: updatedDriver._id, maker: updatedMaker._id}, 
+                            {new: true}) 
+                        .then(updatedUser => {
+                            res.send(updatedUser)
+                        }) 
+                        .catch(err => errorCatch(err, 'Error updating user', res, 503, 'Internal server error'));
+                    })
+                    .catch(err => errorCatch(err, 'Error creating new driver account', res, 503, 'Internal server error'));
+                })
+                .catch(err => errorCatch(err, 'Error adding inventory to maker', res, 503, 'Internal server error'));
+            })
+        })
+        .catch(err => errorCatch(err, 'Error creating new maker account', res, 503, 'Internal server error'));
+    }
+})
+
+ROUTER.delete('/account', (req, res) => {
+    //either delete maker and/or driver account and remove from user
+    // OR just remove from user (do we need to keep for tracking totals?)
+})
 
 //PUT /volunteers/:id - update volunteer info (admin)
 ROUTER.put('/:id', (req, res) => {
@@ -107,43 +223,87 @@ ROUTER.put('/:id', (req, res) => {
         return
     }
 
-    //if data posted has a req.body.maker
-        //first find maker and make those updates, then find user and update with req.body.user
+    
+    //***MAKER UPDATES***/
+        //find user and update, then find maker w/ user.maker id and update 
     if(req.body.maker) {
-        DB.User.findById(req.params.id)
-        .then(user => {
-            console.log('id:', req.params.id, 'user:', user)
-            DB.Maker.findByIdAndUpdate(user.maker._id, req.body.maker, {new: true})
-            .then(maker => {
-                DB.User.findByIdAndUpdate(req.params.id, req.body.user, {new: true})
-                .then(updatedUser => {
-                    res.send(updatedUser)
-                })
-                .catch(err => {
-                    console.log('Error updating volunteer', err)
-                    res.status(503).send('Internal server error')
-                })
+        DB.User.findByIdAndUpdate(
+            req.params.id, 
+            req.body.user, 
+            {new: true})
+        .then(updatedUser => {
+            DB.Maker.findByIdAndUpdate(
+                updatedUser.maker,
+                req.body.maker, 
+                {new: true})
+            .then(updatedMaker => {
+                res.send({updatedMaker, updatedUser})
             })
-            .catch(err => {
-                console.log('Error updating maker info', err)
-                res.status(503).send('Internal server error')
-            })
+            .catch(err => errorCatch(err, 'Error finding and updating maker', res, 503, 'Internal server error'))
         })
-        .catch(err => {
-            console.log('Error finding volunteer', err)
-            res.status(503).send('Internal server error')
-        })
+        .catch(err => errorCatch(err, 'Error finding and updating volunteer', res, 503, 'Internal server error'))
     }
-    //if there is no req.body.maker, just update with req.body
+     
+    //***DRIVER UPDATES***/
+        //find user and update, then find driver w/ user.driver id and update
+    else if(req.body.driver) {
+        DB.User.findByIdAndUpdate(
+            req.params.id, 
+            req.body.user, 
+            {new: true})
+        .then(updatedUser => {
+            DB.Driver.findByIdAndUpdate(
+                updatedUser.driver,
+                req.body.driver, 
+                {new: true})
+            .then(updatedDriver => {
+                res.send({updatedDriver, updatedUser})
+            })
+            .catch(err => errorCatch(err, 'Error finding and updating driver', res, 503, 'Internal server error'))
+        })
+        .catch(err => errorCatch(err, 'Error finding and updating volunteer', res, 503, 'Internal server error'))
+    }   
+
+    //***MAKER+DRIVER UPDATES***/
+        //find user and update
+        //then find driver w/ user.driver id and update(req.body.makerdriver.driver)
+        //then find maker w/ user.maker id and update(req.body.makerdriver.maker)
+    else if(req.body.makerdriver){
+        DB.User.findByIdAndUpdate(
+            req.params.id, 
+            req.body.user, 
+            {new: true})
+        .then(updatedUser => {
+            DB.Driver.findByIdAndUpdate(
+                updatedUser.driver,
+                req.body.driver, 
+                {new: true})
+            .then(updatedDriver => {
+                DB.Maker.findByIdAndUpdate(
+                    updatedUser.maker,
+                    req.body.maker,
+                    {new: true}
+                )
+                .then(updatedMaker => {
+                    res.send({updatedDriver, updatedMaker, updatedUser})
+                })
+                .catch(err => errorCatch(err, 'Error finding and updating maker', res, 503, 'Internal server error'))
+            })
+            .catch(err => errorCatch(err, 'Error finding and updating driver', res, 503, 'Internal server error'))
+        })
+        .catch(err => errorCatch(err, 'Error finding and updating volunteer', res, 503, 'Internal server error'))
+    }   
+
+    //***USER ONLY UPDATES***/
     else {
-        DB.User.findByIdAndUpdate(req.params.id, req.body, {new: true})
+        DB.User.findByIdAndUpdate(
+            req.params.id,
+            req.body.user,
+            {new: true})
         .then(updatedUser => {
             res.send(updatedUser)
         })
-        .catch(err => {
-            console.log('Error updating volunteer', err)
-            res.status(503).send('Internal server error')
-        })
+        .catch(err => errorCatch(err, 'Error finding and updating volunteer', res, 503, 'Internal server error'))
     }
 })
 

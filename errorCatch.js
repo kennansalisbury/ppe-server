@@ -1,6 +1,8 @@
 //error catch
 
-const errorCatch = (res, err, serverMessage, statusNum, clientMessage) => {
+const errorCatch = (err, serverMessage, res, statusNum, clientMessage) => {
     console.log(serverMessage, err)
     res.status(statusNum).send({message: clientMessage})
 }
+
+module.exports = errorCatch

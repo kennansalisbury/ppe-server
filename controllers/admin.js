@@ -33,7 +33,8 @@ ROUTER.get('/', (req, res) => {
             path: 'customer',
             populate: {
                 path: 'orders',
-                populate: {path: 'item.product'}
+                populate: {path: 'item.product'},
+                populate: {path: 'org_type'}
             }
         })
         .then(customers => {
