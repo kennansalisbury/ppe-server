@@ -99,9 +99,17 @@ ROUTER.put('/inventory', (req, res) => {
  
 })
 
-ROUTER.post('/account', (req, res) => {
-    //if req.body.maker: create new maker, create new blank inventories, and add to maker, then find user and update to add new maker id
+//POST /volunteers/account/:id - create new account and add to existing user
+ROUTER.post('/account/:id', (req, res) => {
     
+     //if not admin or user w/ params id, send forbidden
+     if(!req.user.is_admin && req.user._id !== req.params.id) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+
+    //if req.body.maker: create new maker account, create new blank inventories, and add to maker, then find user and update to add new maker id
     if(req.body.maker) {
         DB.Maker.create(req.body.maker)
         .then(newAccount => {
@@ -121,7 +129,7 @@ ROUTER.post('/account', (req, res) => {
                 })
                 .catch(done)
             },
-            //once all inventories created, add ids to maker, then update user with any user updates in req.body
+            //once all inventories created, add ids to maker, then find user and add new maker id
             () => {
                 let inventoryIds = newInventories.map(inventory => inventory._id)
                 DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
@@ -145,11 +153,11 @@ ROUTER.post('/account', (req, res) => {
     //else if req.body.driver: create new driver, then update user/add driver
     else if(req.body.driver) {
         DB.Driver.create(req.body.driver)
-        .then(newAccount => {
+        .then(newDriver => {
             //then find user and update with new driver ref
             DB.User.findByIdAndUpdate(
                 req.params.id, 
-                {driver: updatedDriver._id}, 
+                {driver: newDriver._id}, 
                 {new: true}) 
             .then(updatedUser => {
                 res.send(updatedUser)
@@ -182,18 +190,18 @@ ROUTER.post('/account', (req, res) => {
                 })
                 .catch(done)
             },
-            //once all inventories created, add ids to maker, then update user with any user updates in req.body
+            //once all inventories created, add ids to maker, then add refs to user
             () => {
                 let inventoryIds = newInventories.map(inventory => inventory._id)
                 DB.Maker.findByIdAndUpdate(newAccount._id, {inventory: inventoryIds}, {new:true})
                 .then(updatedMaker => {
                     console.log('maker updated with inventories', updatedMaker)
                     DB.Driver.create(req.body.makerdriver.driver)
-                    .then(updatedDriver => {
+                    .then(newDriver => {
                         //then find user and update with new driver ref
                         DB.User.findByIdAndUpdate(
                             req.params.id, 
-                            {driver: updatedDriver._id, maker: updatedMaker._id}, 
+                            {driver: newDriver._id, maker: updatedMaker._id}, 
                             {new: true}) 
                         .then(updatedUser => {
                             res.send(updatedUser)
