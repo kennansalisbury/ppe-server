@@ -264,15 +264,23 @@ ROUTER.get('/demand', (req, res) => {
     .populate({
         path: 'customer',
         populate: {
-            path: 'customer'
+            path: 'customer',
+            populate: {
+                path: 'org_type'
+            }
         }
     })
     .then(orders => {
         let data = orders.map(order => {
+            let organization 
+            if(order.customer.customer.org_type) {
+                organization = order.customer.customer.org_type.name == 'Other' ? order.customer.customer.org_type_other : order.customer.customer.org_type.name
+            } 
+            
             return ({
                 product: order.item.product.name,
                 demand: order.item.total,
-                organization: order.customer.customer.organization
+                organization
             })
         })
         res.send(data)
