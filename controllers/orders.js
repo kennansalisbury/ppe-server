@@ -1,6 +1,9 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
 
+//helper functions
+const errorCatch = require('../errorCatch') 
+
 //GET /orders - view all orders (admin only)
 ROUTER.get('/', (req, res) => {
 
@@ -300,6 +303,38 @@ ROUTER.put('/:id', (req, res) => {
     else {
         res.status(403).send({message: 'Forbidden'})
     }
+})
+
+
+//DELETE /:id - delete an order (admin only)
+ROUTER.delete('/:id', (req, res) => {
+    
+    if(!req.user.is_admin) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+    //delete order
+    DB.Order.findByIdAndDelete(req.params.id)
+    .then(deletedOrder => {
+        res.send(deletedOrder)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order', res, 503, 'Internal Server Error'))
+
+    //remove from drivers accounts
+    DB.Driver.updateMany({orders: req.params.id}, {$pull: {orders: req.params.id}})
+    .then(drivers => {
+        console.log('removed from drivers?', drivers)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order from driver', res, 503, 'Internal Server Error'))
+
+    //remove from customers accounts
+    DB.Customer.updateMany({orders: req.params.id}, {$pull: {orders: req.params.id}})
+    .then(customers => {
+        console.log('removed from customers?', customers)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order from customer', res, 503, 'Internal Server Error'))
+
 })
 
 

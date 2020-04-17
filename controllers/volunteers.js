@@ -2,6 +2,7 @@ const DB = require('../models');
 const ROUTER = require('express').Router();
 const ASYNC = require('async')
 
+//helper functions
 const errorCatch = require('../errorCatch') 
 
 //THIS VERSION OF THE GET ROUTE WILL NEED TO CHANGE/THIS IS TAKEN CARE OF IN ADMIN ROUTE
