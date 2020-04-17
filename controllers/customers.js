@@ -1,6 +1,9 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
 
+//helper functions
+const errorCatch = require('../errorCatch')
+
 //GET /customers - show all customers & organizations info - if admin
 ROUTER.get('/', (req, res) => {
     if(!req.user.is_admin) {
@@ -26,7 +29,38 @@ ROUTER.get('/', (req, res) => {
 })
 
 
+//PUT /customers/:id - update 1 customer info (admin only)
+ROUTER.put('/:id', (req, res) => {
+    if(!req.user.is_admin){
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
 
+    //if has updates to customer account:
+    if(req.body.customer) {
+        DB.User.findByIdAndUpdate(req.params.id, req.body.user, {new: true})
+        .then(updatedUser => {
+            DB.Customer.findByIdAndUpdate(updatedUser.customer._id, req.body.customer, {new: true})
+            .then(updatedCustomer => {
+                res.send(updatedUser)
+            })
+            .catch(err => errorCatch(err, 'Error updating customer account', res, 503, 'Internal server error'))
+            
+        })
+        .catch(err => errorCatch(err, 'Error updating customer user info', res, 503, 'Internal server error'))
+    }
+    //if just user updates
+    else {
+        DB.User.findByIdAndUpdate(
+            req.params.id, 
+            req.body.user, 
+            {new: true})
+        .then(updatedUser => {
+            res.send(updatedUser)        
+        })
+        .catch(err => errorCatch(err, 'Error updating customer user info', res, 503, 'Internal server error'))
+    }
+})
 
 
 
@@ -50,24 +84,6 @@ ROUTER.get('/:id', (req, res) => {
     })
     .catch(err => {
         console.log('Error finding customer', err)
-        res.status(503).send({message: 'Internal server error'})
-    })
-})
-
-
-//PUT /customers/:id - update 1 customer info (customer should be only one to need this route)
-ROUTER.put('/:id', (req, res) => {
-    if(!req.user.customer){
-        res.status(403).send({message: 'Forbidden'})
-        return
-    }
-
-    DB.User.findByIdAndUpdate(req.params.id, req.body, {new: true})
-    .then(updatedUser => {
-        res.send(updatedUser)
-    })
-    .catch(err => {
-        console.log('Error updating customer', err)
         res.status(503).send({message: 'Internal server error'})
     })
 })
