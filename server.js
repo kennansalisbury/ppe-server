@@ -20,7 +20,8 @@ APP.use('/auth', EXPRESS_JWT({
     path: [
         { url: '/auth/login', methods: ['POST']},
         { url: '/auth/signup/volunteer', methods: ['POST']},
-        { url: '/auth/signup/order', methods: ['POST']}
+        { url: '/auth/signup/order', methods: ['POST']},
+        { url: '/auth/info', methods: ['GET']}
     ]
 }), require('./controllers/auth'));
 

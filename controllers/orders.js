@@ -1,6 +1,9 @@
 const DB = require('../models');
 const ROUTER = require('express').Router();
 
+//helper functions
+const errorCatch = require('../errorCatch') 
+
 //GET /orders - view all orders (admin only)
 ROUTER.get('/', (req, res) => {
 
@@ -261,15 +264,23 @@ ROUTER.get('/demand', (req, res) => {
     .populate({
         path: 'customer',
         populate: {
-            path: 'customer'
+            path: 'customer',
+            populate: {
+                path: 'org_type'
+            }
         }
     })
     .then(orders => {
         let data = orders.map(order => {
+            let organization 
+            if(order.customer.customer.org_type) {
+                organization = order.customer.customer.org_type.name == 'Other' ? order.customer.customer.org_type_other : order.customer.customer.org_type.name
+            } 
+            
             return ({
                 product: order.item.product.name,
                 demand: order.item.total,
-                organization: order.customer.customer.organization
+                organization
             })
         })
         res.send(data)
@@ -300,6 +311,38 @@ ROUTER.put('/:id', (req, res) => {
     else {
         res.status(403).send({message: 'Forbidden'})
     }
+})
+
+
+//DELETE /:id - delete an order (admin only)
+ROUTER.delete('/:id', (req, res) => {
+    
+    if(!req.user.is_admin) {
+        res.status(403).send({message: 'Forbidden'})
+        return
+    }
+
+    //delete order
+    DB.Order.findByIdAndDelete(req.params.id)
+    .then(deletedOrder => {
+        res.send(deletedOrder)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order', res, 503, 'Internal Server Error'))
+
+    //remove from drivers accounts
+    DB.Driver.updateMany({orders: req.params.id}, {$pull: {orders: req.params.id}})
+    .then(drivers => {
+        console.log('removed from drivers?', drivers)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order from driver', res, 503, 'Internal Server Error'))
+
+    //remove from customers accounts
+    DB.Customer.updateMany({orders: req.params.id}, {$pull: {orders: req.params.id}})
+    .then(customers => {
+        console.log('removed from customers?', customers)
+    })
+    .catch(err => errorCatch(err, 'Error finding and deleting order from customer', res, 503, 'Internal Server Error'))
+
 })
 
 

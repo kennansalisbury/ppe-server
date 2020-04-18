@@ -5,6 +5,8 @@ const DB = require('../models');
 const ROUTER = require('express').Router();
 const ASYNC = require('async')
 
+const errorCatch = require('../errorCatch') 
+
 // POST /auth/login
 ROUTER.post('/login', (req, res) => {
     // check if email is in the system
@@ -22,7 +24,8 @@ ROUTER.post('/login', (req, res) => {
     })
     .populate({
         path: 'customer',
-        populate: {path: 'orders'}
+        populate: {path: 'orders'},
+        populate: {path: 'org_type'}
     })
     .then(user => {
         // confirm user and password exist
@@ -57,9 +60,10 @@ ROUTER.post('/signup/volunteer', (req, res) => {
         }
         
         // if not, create the user's account (maker, driver), then create a user and reference the new account
-
+        console.log(req.headers)
         //IF USER SIGNING UP IS A MAKER
         if(req.headers['user-type'] === 'maker') {
+            console.log('creating new maker')
             //first create the maker account
             DB.Maker.create(req.body.maker)
             .then(newAccount => {
@@ -99,23 +103,23 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                         }) 
                         .then(user => {
                             DB.User.findById(user._id)
-                        .populate({
-                            path: 'maker',
-                            populate: {
-                                path: 'inventory',
-                                populate: {path: 'product'}
-                            }
-                        })
-                        .then(u => {
-                            let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
-                                expiresIn: 60 * 15
+                            .populate({
+                                path: 'maker',
+                                populate: {
+                                    path: 'inventory',
+                                    populate: {path: 'product'}
+                                }
+                            })
+                            .then(u => {
+                                let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                                    expiresIn: 60 * 15
+                                });
+                                res.send({ token });
+                            })
+                            .catch(err => {
+                                console.log(`Error populating new user. ${err}`);
+                                res.status(500).send({ message: 'Internal server error.'})
                             });
-                            res.send({ token });
-                        })
-                        .catch(err => {
-                            console.log(`Error populating new user. ${err}`);
-                            res.status(500).send({ message: 'Internal server error.'})
-                        });
                         }) 
                         .catch(err => {
                             console.log(`Error creating new user. ${err}`);
@@ -136,7 +140,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF USER SIGNING UP IS A DRIVER
         else if(req.headers['user-type'] === 'driver') {
-            DB.Driver.create({orders: []})
+            console.log('creating new driver')
+            DB.Driver.create({
+                orders: [],
+                distance_willing_to_drive: req.body.driver.distance_willing_to_drive,
+                days_available: req.body.driver.days_available,
+                times_available: req.body.driver.times_available
+            })
             .then(newAccount => {
                 DB.User.create({
                     first_name: req.body.first_name,
@@ -150,10 +160,18 @@ ROUTER.post('/signup/volunteer', (req, res) => {
                     driver: newAccount._id
                 }) 
                 .then(user => {
-                    let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
-                        expiresIn: 60 * 15
+                    DB.User.findById(user._id)
+                    .populate('driver')
+                    .then(u => {
+                        let token = JWT.sign(u.toJSON(), process.env.JWT_SECRET, {
+                            expiresIn: 60 * 15
+                        });
+                        res.send({ token });
+                    })
+                    .catch(err => {
+                        console.log(`Error populating new user. ${err}`);
+                        res.status(500).send({ message: 'Internal server error.'})
                     });
-                    res.send({ token });
                 })
                 .catch(err => {
                     console.log(`Error creating new user. ${err}`);
@@ -168,7 +186,13 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF USER SIGNING UP IS A MAKER & DRIVER
         else if(req.headers['user-type'] === 'maker+driver') { 
-            DB.Driver.create({orders: []})
+            console.log('creating new maker + driver')
+            DB.Driver.create({
+                orders: [],
+                distance_willing_to_drive: req.body.driver.distance_willing_to_drive,
+                days_available: req.body.driver.days_available,
+                times_available: req.body.driver.times_available
+            })
             .then(newDriverAccount => {
                 DB.Maker.create(req.body.maker)
                 .then(newAccount => {
@@ -255,6 +279,7 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF OTHER
         else {
+            console.log('creating new other')
             DB.User.create(req.body)
             .then(user => {
                 let token = JWT.sign(user.toJSON(), process.env.JWT_SECRET, {
@@ -287,6 +312,7 @@ ROUTER.post('/signup/order', (req, res) => {
         };
 
         //if new, create new customer THEN create user THEN create order - then populate user and send token
+        if(req.body.customer.org_type)
         DB.Customer.create(req.body.customer)
         .then(newCustomer => {
             console.log('new customer created', newCustomer)
@@ -329,7 +355,8 @@ ROUTER.post('/signup/order', (req, res) => {
                         DB.User.findById(newUser._id)
                         .populate({
                             path: 'customer',
-                            populate: {path: 'orders'}
+                            populate: {path: 'orders'},
+                            populate: {path: 'org_type'}
                         })
                         .then(user => {
                             // sign token to user
@@ -363,6 +390,16 @@ ROUTER.post('/signup/order', (req, res) => {
         console.log('Error checking for email', err)
         res.status(503).send({message: 'Internal server error'})
     })
+})
+
+ROUTER.get('/info', (req, res) => {
+    DB.Product.find().then(products => {
+        DB.OrgType.find().then(orgTypes => {
+            res.send({products, orgTypes})
+        })
+        .catch(err => errorCatch(err, 'Error finding org types', res, 503, 'Internal server error'))
+    })
+    .catch(err => errorCatch(err, 'Error finding products', res, 503, 'Internal server error'))
 })
 
 

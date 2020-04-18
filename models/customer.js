@@ -31,7 +31,12 @@ const customerSchema = new MONGOOSE.Schema({
     org_affiliation: {
         type: String,
         required: [true, 'affiliation to organization is required']
-    }
+    },
+    org_type: {
+        type: MONGOOSE.Schema.Types.ObjectId,
+        ref: 'OrgType'
+    },
+    org_type_other: String
 })
 
 module.exports = MONGOOSE.model('Customer', customerSchema);
