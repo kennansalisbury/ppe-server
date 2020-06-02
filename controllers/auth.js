@@ -244,7 +244,8 @@ ROUTER.post('/signup/volunteer', (req, res) => {
 
         //IF OTHER
         else {
-            console.log('creating new other')
+            
+            //create user
             DB.User.create(req.body)
             .then(user => {
                 let token = createJWT(user)
@@ -341,20 +342,5 @@ ROUTER.get('/info', (req, res) => {
     })
     .catch(err => errorCatch(err, 'Error finding products', res, 503, 'Internal server error'))
 })
-
-
-// DO WE NEED THIS?
-
-// GET /current/user
-ROUTER.get('/current/user', (req, res) => {
-    // if user is logged in, req.user should have data
-    console.log(req.user);
-    if (!req.user || !req.user._id) {
-        return res.status(417).send({ message: 'Expectation failed. Check config.' });
-    };
-        // Data from token issue
-        // If updating user, sign token again after update
-    res.send({ user: req.user });
-});
 
 module.exports = ROUTER;
