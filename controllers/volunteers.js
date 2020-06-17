@@ -5,33 +5,6 @@ const ASYNC = require('async')
 //helper functions
 const errorCatch = require('../errorCatch') 
 
-//THIS VERSION OF THE GET ROUTE WILL NEED TO CHANGE/THIS IS TAKEN CARE OF IN ADMIN ROUTE
-//THIS ROUTE CAN BE FOR TEAM LEADS TO VIEW VOLUNTEERS IN THEIR REGION/ON THEIR TEAM
-// GET /volunteers - find all volunteers (admin)
-ROUTER.get('/', (req, res) => {
-    
-     //if rq coming from source other than admin
-    if(!req.user.is_admin) {
-        res.status(403).send({message: 'Forbidden'})
-        return
-    }
-
-    //find all volunteers (!customer fields exist for the user)
-    DB.User.find({customer: {$exists: false}, is_admin: false})
-    .populate({
-        path: 'maker',
-        populate: {
-            path: 'inventory',
-            populate: {path: 'product'}
-        }
-    })
-    .populate('driver')
-    .then(volunteers => {
-        res.send(volunteers)
-    })
-    .catch(err => errorCatch(err, 'Error finding volunteers', res, 503, 'Internal Server Error'))
-})
-
 ROUTER.get('/inventory/:id', (req, res) => {
       //if not admin or user w/ maker id === req.body.maker, send forbidden
       if(!req.user.is_admin && (req.user.maker && (req.user.maker._id != req.params.id))) {
@@ -214,6 +187,7 @@ ROUTER.post('/account/:id', (req, res) => {
     }
 })
 
+//PUT /volunteers/account/:id - remove certain account from user
 ROUTER.put('/account/:id', (req, res) => {
     
     //if not admin or user w/ params id, send forbidden
@@ -353,5 +327,32 @@ ROUTER.put('/:id', (req, res) => {
         .catch(err => errorCatch(err, 'Error finding and updating volunteer', res, 503, 'Internal server error'))
     }
 })
+
+//THIS VERSION OF THE GET ROUTE WILL NEED TO CHANGE/THIS IS TAKEN CARE OF IN ADMIN ROUTE
+//THIS ROUTE CAN BE FOR TEAM LEADS TO VIEW VOLUNTEERS IN THEIR REGION/ON THEIR TEAM
+// GET /volunteers - find all volunteers (admin)
+// ROUTER.get('/', (req, res) => {
+    
+//     //if rq coming from source other than admin
+//    if(!req.user.is_admin) {
+//        res.status(403).send({message: 'Forbidden'})
+//        return
+//    }
+
+//    //find all volunteers (!customer fields exist for the user)
+//    DB.User.find({customer: {$exists: false}, is_admin: false})
+//    .populate({
+//        path: 'maker',
+//        populate: {
+//            path: 'inventory',
+//            populate: {path: 'product'}
+//        }
+//    })
+//    .populate('driver')
+//    .then(volunteers => {
+//        res.send(volunteers)
+//    })
+//    .catch(err => errorCatch(err, 'Error finding volunteers', res, 503, 'Internal Server Error'))
+// })
 
 module.exports = ROUTER;

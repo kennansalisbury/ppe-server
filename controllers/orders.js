@@ -4,42 +4,6 @@ const ROUTER = require('express').Router();
 //helper functions
 const errorCatch = require('../errorCatch') 
 
-//GET /orders - view all orders (admin only)
-ROUTER.get('/', (req, res) => {
-
-    //if admin: view all info
-    if(req.user.is_admin){
-        DB.Order.find()
-        .populate({
-            path: 'customer',
-            populate: {
-                path: 'customer'
-            }
-        })
-        .populate('item.product')
-        .populate('drivers')
-        .populate({
-            path: 'makers',
-            populate: {
-                path: 'maker',
-                populate: {
-                    path: 'inventory',
-                    populate: {path: 'product'}
-                }
-            }
-        })
-        .then(orders => {
-            res.send(orders)
-        })
-        .catch(err => errorCatch(err, 'Error finding orders', res, 503, 'Internal Server Error')) 
-    }
-    else {
-        res.status(403).send({message: 'Forbidden'})
-        return
-    }
-
-})
-
 //POST /orders (admin only for now)
 ROUTER.post('/', (req, res) => {
     if(!req.user.is_admin && !req.user.customer) {
@@ -199,6 +163,43 @@ ROUTER.delete('/:id', (req, res) => {
     .catch(err => errorCatch(err, 'Error finding and deleting order from customer', res, 503, 'Internal Server Error'))
 
 })
+
+//NOT NEEDED FOR V1
+// //GET /orders - view all orders (admin only)
+// ROUTER.get('/', (req, res) => {
+
+//     //if admin: view all info
+//     if(req.user.is_admin){
+//         DB.Order.find()
+//         .populate({
+//             path: 'customer',
+//             populate: {
+//                 path: 'customer'
+//             }
+//         })
+//         .populate('item.product')
+//         .populate('drivers')
+//         .populate({
+//             path: 'makers',
+//             populate: {
+//                 path: 'maker',
+//                 populate: {
+//                     path: 'inventory',
+//                     populate: {path: 'product'}
+//                 }
+//             }
+//         })
+//         .then(orders => {
+//             res.send(orders)
+//         })
+//         .catch(err => errorCatch(err, 'Error finding orders', res, 503, 'Internal Server Error')) 
+//     }
+//     else {
+//         res.status(403).send({message: 'Forbidden'})
+//         return
+//     }
+
+// })
 
 
 module.exports = ROUTER;

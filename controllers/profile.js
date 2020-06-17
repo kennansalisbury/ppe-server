@@ -20,14 +20,14 @@ ROUTER.put('/:id', (req, res) => {
 })
 
 
-//NEED THIS ROUTE? Going to have all of their user info in their token
-// GET /profile/:id - show user info
-ROUTER.get('/:id', (req, res) => {
-    DB.User.findById(req.params.id)
-    .then(user => {
-        res.send(user)
-    })
-    .catch(err => errorCatch(err, 'Error finding user', res, 503, 'Internal Server Error'))
-})
+//NOT NEEDED FOR V1 - all of their user info included in their token upon login
+// // GET /profile/:id - show user info
+// ROUTER.get('/:id', (req, res) => {
+//     DB.User.findById(req.params.id)
+//     .then(user => {
+//         res.send(user)
+//     })
+//     .catch(err => errorCatch(err, 'Error finding user', res, 503, 'Internal Server Error'))
+// })
 
 module.exports = ROUTER;
