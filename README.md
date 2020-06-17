@@ -3,6 +3,7 @@
 ## Routes
 All routes JWT protected unless otherwise specified
 
+|METHOD | PATH | NOTES |
 | ------ | --------------- | ----------------- |
 | POST    | /auth/login   | logs in user |
 | POST   | /auth/signup/volunteer | signs up user of volunteer type - not protected |
