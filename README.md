@@ -3,9 +3,9 @@
 ## Routes
 All routes JWT protected unless otherwise specified
 
-|METHOD | PATH | PURPOSE | NOTES |
+|METHOD | PATH | PURPOSE | PERMISSIONS |
 | ------ | --------------- | ----------------- | ---------- |
-| POST    | /auth/login   | logs in user |
+| POST    | /auth/login   | logs in user | not protected |
 | POST   | /auth/signup/volunteer | signs up user of volunteer type | not protected |
 | POST   | /auth/signup/volunteer | signs up user as volunteer - accommodates sign up as a maker account, a driver account, or both | not protected |
 | POST    | /auth/signup/order   | signs up user as organization and saves order information | not protected |
@@ -17,7 +17,7 @@ All routes JWT protected unless otherwise specified
 | PUT    | /orders/:id            | update existing order details | admin only |
 | DELETE    | /orders/:id            | delete existing order | admin only |
 | GET    | /products           | serves all existing products | not protected |
-| POST    | /products         | create new product |
+| POST    | /products         | create new product | not protected |
 | PUT    | /profile/:id         | updates user info and reissues token | current user only |
 | GET    | volunteers/inventory/:id         | view user's product inventory | admin or current user |
 | GET    | /volunteers/inventory/:id         | view user's product inventory | admin or current user |
