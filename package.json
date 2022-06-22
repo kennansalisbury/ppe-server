@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/GavinCallander/sewstrong-server#readme",
   "dependencies": {
-    "async": "^3.2.0",
+    "async": "^3.2.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
